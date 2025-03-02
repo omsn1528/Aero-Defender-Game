@@ -426,6 +426,7 @@
       try { sounds.background.pause(); sounds.background.currentTime = 0; } catch (error) { console.log(error); }
     }
     
+    // Plays collision sound only on game-over collisions
     function playCollisionSound() {
       try {
         pauseBackgroundMusic();
@@ -638,9 +639,11 @@
         }
         if (checkCollision(plane, m)) {
           if (isShieldActive) {
+            // When shield is active, remove missile without triggering collision.mp3
             missiles.splice(i, 1);
             playSound('explosion');
           } else {
+            // No shield: collision causes game over and collision.mp3 is played
             gameOver();
             return;
           }
