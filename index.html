@@ -158,7 +158,7 @@
     .control-buttons {
       position: absolute;
       left: 50%;
-      bottom: 60px;
+      bottom: 60px; /* slightly up from the very bottom */
       transform: translateX(-50%);
       z-index: 5;
       display: grid;
@@ -208,7 +208,7 @@
 <body>
   <!-- Game Container -->
   <div id="gameContainer">
-    <!-- Background Video (bgvideo.mp4 works as expected) -->
+    <!-- Background Video -->
     <video id="bgVideo" autoplay loop muted playsinline>
       <source src="videos/bgvideo.mp4" type="video/mp4">
       Your browser does not support the video tag.
@@ -297,15 +297,13 @@
       missileSpeed: 4,           // speed for missiles
       coinSpeed: 3,              // speed for coins
       shieldDuration: 10000,     // ms shield lasts
-      // Increased magnet properties:
-      magnetAttractionRadius: 250,  // increased from 150
-      magnetAttractionSpeed: 12,    // increased from 8
-      // Updated airplane prices:
+      magnetAttractionRadius: 150,
+      magnetAttractionSpeed: 8,
       planeImages: [
-        { id: 0, src: 'images/plane1.png', price: 0,   name: 'Basic Plane' },
+        { id: 0, src: 'images/plane1.png', price: 0, name: 'Basic Plane' },
         { id: 1, src: 'images/plane2.png', price: 100, name: 'Advanced Plane' },
-        { id: 2, src: 'images/plane3.png', price: 250, name: 'Stealth Plane' },
-        { id: 3, src: 'images/plane4.png', price: 500, name: 'Space Plane' }
+        { id: 2, src: 'images/plane3.png', price: 100, name: 'Stealth Plane' },
+        { id: 3, src: 'images/plane4.png', price: 100, name: 'Space Plane' }
       ]
     };
     
@@ -377,7 +375,7 @@
     loadAsset(assets.shield, 'images/shield.png');
     loadAsset(assets.magnet, 'images/magnet.png');
     
-    // Fallback in case assets take too long
+    // Fallback initialization in case assets take too long
     setTimeout(() => {
       if (gameState === 'menu' && assetsLoaded < totalAssets) {
         console.warn("Fallback init: Not all assets loaded in time.");
@@ -426,7 +424,6 @@
       try { sounds.background.pause(); sounds.background.currentTime = 0; } catch (error) { console.log(error); }
     }
     
-    // Plays collision sound only on game-over collisions
     function playCollisionSound() {
       try {
         pauseBackgroundMusic();
@@ -459,10 +456,10 @@
       draw() {
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.drawImage(assets.planes[selectedPlane], -this.width / 2, -this.height / 2, this.width, this.height);
-        if (isShieldActive) {
+        ctx.drawImage(assets.planes[selectedPlane], -this.width/2, -this.height/2, this.width, this.height);
+        if(isShieldActive) {
           ctx.beginPath();
-          ctx.arc(0, 0, this.width / 1.5, 0, Math.PI * 2);
+          ctx.arc(0, 0, this.width/1.5, 0, Math.PI * 2);
           ctx.strokeStyle = 'rgba(0,200,255,0.8)';
           ctx.lineWidth = 3;
           ctx.stroke();
@@ -496,14 +493,14 @@
         speed: GAME_CONFIG.missileSpeed * getDifficultyFactor(),
         getBounds() {
           return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
+            left: this.x - this.width/2,
+            right: this.x + this.width/2,
+            top: this.y - this.height/2,
+            bottom: this.y + this.height/2
           };
         },
         draw() {
-          ctx.drawImage(assets.missile, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+          ctx.drawImage(assets.missile, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
         }
       });
     }
@@ -524,21 +521,20 @@
         image: coinImage,
         getBounds() {
           return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
+            left: this.x - this.width/2,
+            right: this.x + this.width/2,
+            top: this.y - this.height/2,
+            bottom: this.y + this.height/2
           };
         },
         draw() {
-          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+          ctx.drawImage(this.image, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
         }
       });
     }
     
-    // For magnet power-up, use a larger size for a more attractive look
     function spawnPowerup(type) {
-      const powerupSize = type === 'magnet' ? 60 : 40;
+      const powerupSize = 40;
       const powerupImage = type === 'shield' ? assets.shield : assets.magnet;
       powerups.push({
         x: Math.random() * canvas.width,
@@ -550,14 +546,14 @@
         image: powerupImage,
         getBounds() {
           return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
+            left: this.x - this.width/2,
+            right: this.x + this.width/2,
+            top: this.y - this.height/2,
+            bottom: this.y + this.height/2
           };
         },
         draw() {
-          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+          ctx.drawImage(this.image, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
         }
       });
     }
@@ -576,8 +572,8 @@
     
     function updatePowerupStates() {
       const now = Date.now();
-      if (isShieldActive && now > shieldEndTime) isShieldActive = false;
-      if (isMagnetActive && now > magnetEndTime) isMagnetActive = false;
+      if(isShieldActive && now > shieldEndTime) isShieldActive = false;
+      if(isMagnetActive && now > magnetEndTime) isMagnetActive = false;
     }
     
     function checkCollision(obj1, obj2) {
@@ -587,10 +583,10 @@
     
     function gameLoop(timestamp) {
       const deltaTime = timestamp - lastFrameTime;
-      if (deltaTime >= frameInterval) {
+      if(deltaTime >= frameInterval) {
         lastFrameTime = timestamp - (deltaTime % frameInterval);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (gameState === 'playing') {
+        if(gameState === 'playing') {
           updateGame();
           drawGame();
         }
@@ -604,23 +600,23 @@
       updatePowerupStates();
       handlePlayerMovement();
       const currentTime = Date.now();
-      if (currentTime - lastMissileTime > GAME_CONFIG.missileSpawnRate / getDifficultyFactor()) {
+      if(currentTime - lastMissileTime > GAME_CONFIG.missileSpawnRate / getDifficultyFactor()) {
         spawnMissile();
         lastMissileTime = currentTime;
       }
-      if (currentTime - lastCoinTime > GAME_CONFIG.coinSpawnRate) {
+      if(currentTime - lastCoinTime > GAME_CONFIG.coinSpawnRate) {
         spawnCoin(false);
         lastCoinTime = currentTime;
       }
-      if (currentTime - lastNewCoinTime > GAME_CONFIG.newCoinSpawnRate) {
+      if(currentTime - lastNewCoinTime > GAME_CONFIG.newCoinSpawnRate) {
         spawnCoin(true);
         lastNewCoinTime = currentTime;
       }
-      if (currentTime - lastShieldTime > GAME_CONFIG.shieldSpawnRate) {
+      if(currentTime - lastShieldTime > GAME_CONFIG.shieldSpawnRate) {
         spawnPowerup('shield');
         lastShieldTime = currentTime;
       }
-      if (currentTime - lastMagnetTime > GAME_CONFIG.magnetSpawnRate) {
+      if(currentTime - lastMagnetTime > GAME_CONFIG.magnetSpawnRate) {
         spawnPowerup('magnet');
         lastMagnetTime = currentTime;
       }
@@ -630,20 +626,18 @@
     }
     
     function updateMissiles() {
-      for (let i = missiles.length - 1; i >= 0; i--) {
+      for(let i = missiles.length - 1; i >= 0; i--) {
         let m = missiles[i];
         m.y += m.speed;
-        if (m.y > canvas.height + m.height) {
+        if(m.y > canvas.height + m.height) {
           missiles.splice(i, 1);
           continue;
         }
-        if (checkCollision(plane, m)) {
-          if (isShieldActive) {
-            // When shield is active, remove missile without triggering collision.mp3
+        if(checkCollision(plane, m)) {
+          if(isShieldActive) {
             missiles.splice(i, 1);
             playSound('explosion');
           } else {
-            // No shield: collision causes game over and collision.mp3 is played
             gameOver();
             return;
           }
@@ -652,13 +646,13 @@
     }
     
     function updateCoins() {
-      for (let i = coinsArray.length - 1; i >= 0; i--) {
+      for(let i = coinsArray.length - 1; i >= 0; i--) {
         let coin = coinsArray[i];
-        if (isMagnetActive) {
+        if(isMagnetActive) {
           let dx = plane.x - coin.x, dy = plane.y - coin.y;
-          let distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < GAME_CONFIG.magnetAttractionRadius) coin.isAttracted = true;
-          if (coin.isAttracted) {
+          let distance = Math.sqrt(dx*dx + dy*dy);
+          if(distance < GAME_CONFIG.magnetAttractionRadius) coin.isAttracted = true;
+          if(coin.isAttracted) {
             let angle = Math.atan2(dy, dx);
             coin.x += Math.cos(angle) * GAME_CONFIG.magnetAttractionSpeed;
             coin.y += Math.sin(angle) * GAME_CONFIG.magnetAttractionSpeed;
@@ -668,11 +662,11 @@
         } else {
           coin.y += coin.speed;
         }
-        if (coin.y > canvas.height + coin.height) {
+        if(coin.y > canvas.height + coin.height) {
           coinsArray.splice(i, 1);
           continue;
         }
-        if (checkCollision(plane, coin)) {
+        if(checkCollision(plane, coin)) {
           coins += coin.value;
           coinsCollected += coin.value;
           coinsArray.splice(i, 1);
@@ -684,16 +678,16 @@
     }
     
     function updatePowerups() {
-      for (let i = powerups.length - 1; i >= 0; i--) {
+      for(let i = powerups.length - 1; i >= 0; i--) {
         let p = powerups[i];
         p.y += p.speed;
-        if (p.y > canvas.height + p.height) {
+        if(p.y > canvas.height + p.height) {
           powerups.splice(i, 1);
           continue;
         }
-        if (checkCollision(plane, p)) {
-          if (p.type === 'shield') activateShield();
-          else if (p.type === 'magnet') activateMagnet();
+        if(checkCollision(plane, p)) {
+          if(p.type === 'shield') activateShield();
+          else if(p.type === 'magnet') activateMagnet();
           powerups.splice(i, 1);
           continue;
         }
@@ -702,19 +696,19 @@
     
     function handlePlayerMovement() {
       const speed = plane.speed;
-      if (keysPressed['ArrowLeft'] || keysPressed['a']) plane.x -= speed;
-      if (keysPressed['ArrowRight'] || keysPressed['d']) plane.x += speed;
-      if (keysPressed['ArrowUp'] || keysPressed['w']) plane.y -= speed;
-      if (keysPressed['ArrowDown'] || keysPressed['s']) plane.y += speed;
-      if (isTouching) {
+      if(keysPressed['ArrowLeft'] || keysPressed['a']) plane.x -= speed;
+      if(keysPressed['ArrowRight'] || keysPressed['d']) plane.x += speed;
+      if(keysPressed['ArrowUp'] || keysPressed['w']) plane.y -= speed;
+      if(keysPressed['ArrowDown'] || keysPressed['s']) plane.y += speed;
+      if(isTouching) {
         let dx = touchX - lastTouchX, dy = touchY - lastTouchY;
-        if (Math.abs(dx) > 1) plane.x += dx / 2;
-        if (Math.abs(dy) > 1) plane.y += dy / 2;
+        if(Math.abs(dx) > 1) plane.x += dx / 2;
+        if(Math.abs(dy) > 1) plane.y += dy / 2;
         lastTouchX = touchX;
         lastTouchY = touchY;
       }
-      plane.x = Math.max(plane.width / 2, Math.min(canvas.width - plane.width / 2, plane.x));
-      plane.y = Math.max(plane.height / 2, Math.min(canvas.height - plane.height / 2, plane.y));
+      plane.x = Math.max(plane.width/2, Math.min(canvas.width - plane.width/2, plane.x));
+      plane.y = Math.max(plane.height/2, Math.min(canvas.height - plane.height/2, plane.y));
     }
     
     function drawGame() {
@@ -722,12 +716,12 @@
       missiles.forEach(m => m.draw());
       coinsArray.forEach(c => c.draw());
       powerups.forEach(p => p.draw());
-      if (isShieldActive || isMagnetActive) {
+      if(isShieldActive || isMagnetActive) {
         let y = 50;
-        if (isShieldActive) {
-          let timeLeft = (shieldEndTime - Date.now()) / 1000;
+        if(isShieldActive) {
+          let timeLeft = (shieldEndTime - Date.now())/1000;
           ctx.fillStyle = 'rgba(0,200,255,0.7)';
-          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft / (GAME_CONFIG.shieldDuration / 1000)), 20);
+          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft/(GAME_CONFIG.shieldDuration/1000)), 20);
           ctx.strokeStyle = 'white';
           ctx.strokeRect(canvas.width - 150, y, 140, 20);
           ctx.fillStyle = 'white';
@@ -735,10 +729,10 @@
           ctx.fillText('Shield', canvas.width - 140, y + 15);
           y += 30;
         }
-        if (isMagnetActive) {
-          let timeLeft = (magnetEndTime - Date.now()) / 1000;
+        if(isMagnetActive) {
+          let timeLeft = (magnetEndTime - Date.now())/1000;
           ctx.fillStyle = 'rgba(255,100,0,0.7)';
-          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft / (GAME_CONFIG.magnetDuration / 1000)), 20);
+          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft/(GAME_CONFIG.magnetDuration/1000)), 20);
           ctx.strokeStyle = 'white';
           ctx.strokeRect(canvas.width - 150, y, 140, 20);
           ctx.fillStyle = 'white';
@@ -752,7 +746,7 @@
       gameState = 'gameover';
       stopBackgroundMusic();
       playCollisionSound();
-      if (Math.floor(score) > highScore) {
+      if(Math.floor(score) > highScore) {
         highScore = Math.floor(score);
         localStorage.setItem('highScore', highScore);
       }
@@ -788,7 +782,7 @@
     }
     
     function pauseGame() {
-      if (gameState === 'playing') {
+      if(gameState === 'playing') {
         gameState = 'paused';
         pauseBackgroundMusic();
         document.getElementById('pauseMenu').classList.remove('hidden');
@@ -796,7 +790,7 @@
     }
     
     function resumeGame() {
-      if (gameState === 'paused') {
+      if(gameState === 'paused') {
         gameState = 'playing';
         playBackgroundMusic();
         document.getElementById('pauseMenu').classList.add('hidden');
@@ -829,15 +823,15 @@
       GAME_CONFIG.planeImages.forEach(planeInfo => {
         const planeItem = document.createElement('div');
         planeItem.className = 'plane-item';
-        if (ownedPlanes.includes(planeInfo.id)) planeItem.classList.add('owned');
-        if (selectedPlane === planeInfo.id) planeItem.classList.add('selected');
+        if(ownedPlanes.includes(planeInfo.id)) planeItem.classList.add('owned');
+        if(selectedPlane === planeInfo.id) planeItem.classList.add('selected');
         const planeImage = document.createElement('img');
         planeImage.src = planeInfo.src;
         planeImage.alt = planeInfo.name;
         const planeName = document.createElement('h3');
         planeName.textContent = planeInfo.name;
         const planePrice = document.createElement('div');
-        if (ownedPlanes.includes(planeInfo.id)) {
+        if(ownedPlanes.includes(planeInfo.id)) {
           const selectButton = document.createElement('button');
           selectButton.textContent = selectedPlane === planeInfo.id ? 'Selected' : 'Select';
           selectButton.disabled = selectedPlane === planeInfo.id;
@@ -849,7 +843,7 @@
           planePrice.appendChild(selectButton);
         } else {
           planePrice.textContent = `${planeInfo.price} coins`;
-          if (coins >= planeInfo.price) {
+          if(coins >= planeInfo.price) {
             const buyButton = document.createElement('button');
             buyButton.textContent = 'Buy';
             buyButton.addEventListener('click', () => {
@@ -867,28 +861,21 @@
       });
     }
     
-    // Modified to auto-close the store and return to main menu upon selection.
     function buyPlane(planeId, price) {
-      if (coins >= price && !ownedPlanes.includes(planeId)) {
+      if(coins >= price && !ownedPlanes.includes(planeId)) {
         coins -= price;
         ownedPlanes.push(planeId);
         selectPlane(planeId);
         localStorage.setItem('coins', coins);
         localStorage.setItem('ownedPlanes', JSON.stringify(ownedPlanes));
         updateUI();
-        // Auto-close store and show main menu after purchase/selection.
-        document.getElementById('storeModal').classList.add('hidden');
-        document.getElementById('mainMenu').classList.remove('hidden');
       }
     }
     
     function selectPlane(planeId) {
-      if (ownedPlanes.includes(planeId)) {
+      if(ownedPlanes.includes(planeId)) {
         selectedPlane = planeId;
         localStorage.setItem('selectedPlane', selectedPlane);
-        // Auto-close store and return to main menu upon selection.
-        document.getElementById('storeModal').classList.add('hidden');
-        document.getElementById('mainMenu').classList.remove('hidden');
       }
     }
     
@@ -898,7 +885,7 @@
     function setupKeyboardControls() {
       window.addEventListener('keydown', e => {
         keysPressed[e.key] = true;
-        if (e.key === 'Escape' && gameState === 'playing') pauseGame();
+        if(e.key === 'Escape' && gameState === 'playing') pauseGame();
       });
       window.addEventListener('keyup', e => {
         keysPressed[e.key] = false;
@@ -930,7 +917,7 @@
         lastTouchY = touchY;
       });
       canvas.addEventListener('mousemove', e => {
-        if (isTouching) {
+        if(isTouching) {
           touchX = e.clientX;
           touchY = e.clientY;
         }
@@ -1003,7 +990,7 @@
       });
       document.getElementById('volumeSlider').addEventListener('input', e => {
         const vol = parseFloat(e.target.value) / 100;
-        for (let s in sounds) { sounds[s].volume = vol; }
+        for(let s in sounds) { sounds[s].volume = vol; }
       });
     }
     
@@ -1016,7 +1003,7 @@
       document.getElementById('controls').classList.add('hidden');
       // Set volume from slider value
       const volume = parseFloat(document.getElementById('volumeSlider').value) / 100;
-      for (let s in sounds) { sounds[s].volume = volume; }
+      for(let s in sounds) { sounds[s].volume = volume; }
       lastFrameTime = performance.now();
       animationFrameId = requestAnimationFrame(gameLoop);
     }
