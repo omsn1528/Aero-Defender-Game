@@ -1,34 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <!-- 
-    Viewport meta ensures proper scaling on mobile devices. 
-    We fill the screen so there's no black bar on 9:16 or other ratios.
-  -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Aero Defender</title>
   <style>
-    /* 
-      Force a dark theme for the game, 
-      removing user toggle for dark mode as requested.
-    */
+    /* Base styles */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background: #2d2d2d; /* forced dark background */
+      background: #222;
       color: #fff;
       font-family: Arial, sans-serif;
-      overflow: hidden; /* prevent scrolling */
-      touch-action: none; /* helps with swipe detection */
+      overflow: hidden;
+      touch-action: none;
     }
-
-    /* 
-      The main container fills the entire screen 
-      to avoid black bars on 9:16 or other ratios.
-    */
+    /* Game container */
     #gameContainer {
       position: absolute;
       top: 0;
@@ -38,8 +27,7 @@
       background: #000;
       overflow: hidden;
     }
-
-    /* Optional background video (if used) */
+    /* Background Video */
     #bgVideo {
       position: absolute;
       top: 0;
@@ -49,842 +37,986 @@
       object-fit: cover;
       z-index: 0;
     }
-
-    /* Main game canvas on top of video */
+    /* Main game canvas */
     #gameCanvas {
       position: absolute;
       width: 100%;
       height: 100%;
       z-index: 1;
     }
-
-    /* In-Game UI (Score, High Score, Coins) */
+    /* Game UI */
     #gameUI {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       padding: 10px;
       border-radius: 5px;
       z-index: 5;
+      font-size: 1.2rem;
+    }
+    /* Menu overlays */
+    .menu-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
       display: flex;
       flex-direction: column;
-      gap: 5px;
-    }
-    #gameUI span {
-      font-weight: bold;
-    }
-
-    /* Common menu/modal styling */
-    .menu, .modal {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.85);
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
+      justify-content: center;
+      align-items: center;
       z-index: 10;
+    }
+    .menu-overlay h1 {
+      font-size: 3rem;
+      margin-bottom: 2rem;
+      color: #fff;
+      text-shadow: 0 0 10px #00f;
+    }
+    .menu-overlay h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+    .menu-overlay button {
+      margin: 0.5rem;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background: #004080;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      min-width: 200px;
+      transition: background 0.3s;
+    }
+    .menu-overlay button:hover {
+      background: #0060a0;
+    }
+    /* Modal overlays */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 15;
+    }
+    .modal-content {
+      background: #333;
+      padding: 2rem;
+      border-radius: 10px;
+      max-width: 80%;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+    .setting-item {
+      margin: 1rem 0;
       display: flex;
       flex-direction: column;
-      gap: 15px;
-      width: 300px;
-      max-width: 90%;
     }
-    .menu-button {
-      padding: 15px 30px;
-      font-size: 1.1em;
-      background: #2196F3;
-      border: none;
+    /* Store items */
+    .store-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .plane-item {
+      padding: 1rem;
+      background: #444;
       border-radius: 5px;
-      cursor: pointer;
-      color: #fff;
+      text-align: center;
+      position: relative;
     }
-    .menu-button:hover {
-      background: #1e88e5;
+    .plane-item img {
+      max-width: 100%;
+      height: 100px;
+      object-fit: contain;
     }
-    .hidden {
-      display: none;
+    .plane-item.selected {
+      border: 2px solid gold;
     }
-
-    /* Pause button at top-right corner */
-    #pauseButton {
+    .plane-item.owned::after {
+      content: "OWNED";
       position: absolute;
-      top: 20px;
-      right: 20px;
-      z-index: 5;
-      padding: 10px 15px;
-      font-size: 1.5em;
-      border: none;
-      border-radius: 5px;
-      background: #f44336;
-      color: #fff;
-      cursor: pointer;
+      top: 5px;
+      right: 5px;
+      background: green;
+      color: white;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 0.8rem;
     }
-
-    /* The diamond (rhombus) shape arrow controls, hidden until gameplay */
-    #arrowControls {
+    /* On-screen control buttons */
+    .control-buttons {
       position: absolute;
-      bottom: 60px; /* a bit above bottom so no black bar is visible on mobile */
       left: 50%;
+      bottom: 60px;
       transform: translateX(-50%);
-      width: 150px;
-      height: 150px;
-      display: none; /* hidden until in-game */
       z-index: 5;
-      /* We'll use a grid to place the arrows in a diamond shape */
       display: grid;
       grid-template-areas:
         ". up ."
         "left . right"
         ". down .";
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: 1fr 1fr 1fr;
-      gap: 10px;
+      grid-gap: 10px;
     }
-    #arrowControls button {
-      background: rgba(33,150,243,0.8);
+    .control-btn {
+      width: 60px;
+      height: 60px;
+      font-size: 1.5rem;
+      background: rgba(255,255,255,0.3);
       border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 1.4em;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       cursor: pointer;
-      opacity: 0.9; /* slightly transparent for style */
     }
-    #arrowControls button:hover {
-      opacity: 1.0;
+    #upButton { grid-area: up; }
+    #leftButton { grid-area: left; }
+    #rightButton { grid-area: right; }
+    #downButton { grid-area: down; }
+    /* Utility classes */
+    .hidden {
+      display: none !important;
     }
-    /* Position each arrow in the grid */
-    .up {
-      grid-area: up;
-    }
-    .down {
-      grid-area: down;
-    }
-    .left {
-      grid-area: left;
-    }
-    .right {
-      grid-area: right;
-    }
-
-    /* Store modal items */
-    #storeModal .store-item {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 5px;
-      margin-bottom: 10px;
-    }
-    #storeModal .store-item img {
-      width: 50px;
-      height: auto;
-    }
-
-    /* Settings modal: volume slider only */
-    #settingsModal .settings-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    #settingsModal label {
-      font-size: 1.0em;
-    }
-    #settingsModal input[type="range"] {
-      width: 150px;
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .menu-overlay h1 {
+        font-size: 2rem;
+      }
+      .menu-overlay button {
+        padding: 0.8rem 1.6rem;
+        font-size: 1rem;
+        min-width: 180px;
+      }
+      .control-btn {
+        width: 50px;
+        height: 50px;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Game Container -->
   <div id="gameContainer">
-    <!-- Optional Background Video -->
+    <!-- Background Video (bgvideo.mp4 works as expected) -->
     <video id="bgVideo" autoplay loop muted playsinline>
-      <source src="videos/bgvideo.mp4" type="video/mp4" />
-      <!-- fallback text if not supported -->
+      <source src="videos/bgvideo.mp4" type="video/mp4">
       Your browser does not support the video tag.
     </video>
-
-    <!-- Main Game Canvas -->
     <canvas id="gameCanvas"></canvas>
-
-    <!-- In-Game UI: Score, High Score, Coins -->
-    <div id="gameUI">
+    
+    <!-- Main Menu -->
+    <div id="mainMenu" class="menu-overlay">
+      <h1>Aero Defender</h1>
+      <button id="startButton">Start Game</button>
+      <button id="storeButton">Store</button>
+      <button id="settingsButton">Settings</button>
+    </div>
+    
+    <!-- Pause Menu -->
+    <div id="pauseMenu" class="menu-overlay hidden">
+      <h2>Paused</h2>
+      <button id="resumeButton">Resume</button>
+      <button id="restartButton">Restart</button>
+      <button id="mainMenuButton">Main Menu</button>
+    </div>
+    
+    <!-- Game Over Menu -->
+    <div id="gameOverMenu" class="menu-overlay hidden">
+      <h2>Game Over</h2>
+      <div>Score: <span id="finalScore">0</span></div>
+      <div>Coins Collected: <span id="finalCoins">0</span></div>
+      <button id="restartButton2">Play Again</button>
+      <button id="mainMenuButton2">Main Menu</button>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h2>Settings</h2>
+        <div class="setting-item">
+          <label for="volumeSlider">Volume</label>
+          <input type="range" id="volumeSlider" min="0" max="100" value="50">
+        </div>
+        <button id="closeSettings">Close</button>
+      </div>
+    </div>
+    
+    <!-- Store Modal -->
+    <div id="storeModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h2>Store</h2>
+        <div>Your Coins: <span id="storeCoins">0</span></div>
+        <div id="planesList" class="store-items">
+          <!-- Planes will be added dynamically -->
+        </div>
+        <button id="closeStore">Close</button>
+      </div>
+    </div>
+    
+    <!-- Game UI -->
+    <div id="gameUI" class="hidden">
       <div>Score: <span id="score">0</span></div>
       <div>High Score: <span id="highScore">0</span></div>
       <div>Coins: <span id="coins">0</span></div>
     </div>
-
-    <!-- Main Menu -->
-    <div id="mainMenu" class="menu">
-      <h1>Aero Defender</h1>
-      <button class="menu-button" onclick="playClickSound(); startGame();">Start Game</button>
-      <button class="menu-button" onclick="playClickSound(); toggleStore();">Store</button>
-      <button class="menu-button" onclick="playClickSound(); toggleSettings();">Settings</button>
-    </div>
-
-    <!-- Pause Menu -->
-    <div id="pauseMenu" class="menu hidden">
-      <h2>Game Paused</h2>
-      <button class="menu-button" onclick="playClickSound(); resumeGame();">Resume</button>
-      <button class="menu-button" onclick="playClickSound(); restartGame();">Restart</button>
-      <button class="menu-button" onclick="playClickSound(); showMainMenu();">Main Menu</button>
-    </div>
-
-    <!-- Store Modal (no shield purchase; default plane is free) -->
-    <div id="storeModal" class="modal hidden">
-      <h2>Store</h2>
-      <div class="store-item">
-        <img src="images/plane1.png" alt="Plane 1">
-        <button class="menu-button" onclick="playClickSound(); buyPlane(1);">Select Default Plane</button>
-      </div>
-      <div class="store-item">
-        <img src="images/plane2.png" alt="Plane 2">
-        <button class="menu-button" onclick="playClickSound(); buyPlane(2);">Unlock Plane 2 - 100 Coins</button>
-      </div>
-      <div class="store-item">
-        <img src="images/plane3.png" alt="Plane 3">
-        <button class="menu-button" onclick="playClickSound(); buyPlane(3);">Unlock Plane 3 - 100 Coins</button>
-      </div>
-      <div class="store-item">
-        <img src="images/plane4.png" alt="Plane 4">
-        <button class="menu-button" onclick="playClickSound(); buyPlane(4);">Unlock Plane 4 - 100 Coins</button>
-      </div>
-      <button class="menu-button" onclick="playClickSound(); toggleStore();">Close</button>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal hidden">
-      <h2>Settings</h2>
-      <div class="settings-row">
-        <label for="volumeSlider">Music Volume:</label>
-        <input type="range" id="volumeSlider" min="0" max="100" value="50" onchange="setMusicVolume(this.value)">
-        <span id="volumeDisplay">50%</span>
-      </div>
-      <button class="menu-button" onclick="playClickSound(); toggleSettings();">Close</button>
-    </div>
-
-    <!-- Pause Button -->
-    <button id="pauseButton" onclick="togglePause();">||</button>
-
-    <!-- Diamond-Shaped Arrow Controls (initially hidden) -->
-    <div id="arrowControls">
-      <button class="up" onclick="arrowAction('up')">↑</button>
-      <button class="left" onclick="arrowAction('left')">←</button>
-      <button class="right" onclick="arrowAction('right')">→</button>
-      <button class="down" onclick="arrowAction('down')">↓</button>
+    
+    <!-- On-screen Arrow Controls -->
+    <div id="controls" class="control-buttons hidden">
+      <button id="upButton" class="control-btn">⬆️</button>
+      <button id="leftButton" class="control-btn">⬅️</button>
+      <button id="rightButton" class="control-btn">➡️</button>
+      <button id="downButton" class="control-btn">⬇️</button>
     </div>
   </div>
-
+  
   <script>
+    /* =========================
+       Game Configuration
+       ========================= */
+    const GAME_CONFIG = {
+      missileSpawnRate: 1500,    // ms between missiles
+      coinSpawnRate: 2000,       // ms between coins
+      newCoinSpawnRate: 5000,    // ms between new coins
+      shieldSpawnRate: 15000,    // ms between shields
+      magnetSpawnRate: 30000,    // ms between magnets
+      magnetDuration: 10000,     // ms magnet is active
+      coinValue: 10,             // regular coin value
+      newCoinValue: 20,          // new coin value
+      planeSpeed: 5,             // speed for plane movement
+      missileSpeed: 4,           // speed for missiles
+      coinSpeed: 3,              // speed for coins
+      shieldDuration: 10000,     // ms shield lasts
+      // Increased magnet properties:
+      magnetAttractionRadius: 250,  // increased from 150
+      magnetAttractionSpeed: 12,    // increased from 8
+      // Updated airplane prices:
+      planeImages: [
+        { id: 0, src: 'images/plane1.png', price: 0,   name: 'Basic Plane' },
+        { id: 1, src: 'images/plane2.png', price: 100, name: 'Advanced Plane' },
+        { id: 2, src: 'images/plane3.png', price: 250, name: 'Stealth Plane' },
+        { id: 3, src: 'images/plane4.png', price: 500, name: 'Space Plane' }
+      ]
+    };
+    
     /* =========================
        Global Variables & Setup
        ========================= */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
-    let gameState = 'menu'; // can be 'menu', 'playing', 'paused', 'gameover'
-    let score = 0;
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    
+    let gameState = 'menu'; // menu, playing, paused, gameover
+    let score = 0, coinsCollected = 0;
     let coins = parseInt(localStorage.getItem('coins')) || 0;
     let highScore = parseInt(localStorage.getItem('highScore')) || 0;
-
-    // For difficulty scaling
+    let animationFrameId = null;
+    let lastFrameTime = 0, FPS = 60;
+    const frameInterval = 1000 / FPS;
+    
+    // Owned planes and selection
+    let ownedPlanes = JSON.parse(localStorage.getItem('ownedPlanes')) || [0];
+    let selectedPlane = parseInt(localStorage.getItem('selectedPlane')) || 0;
+    
     function getDifficultyFactor() {
       return 1 + score / 2000;
     }
-
-    // We'll store plane images, missile, coin, shield
+    
+    // Asset loading
     const assets = {
-      planes: [new Image(), new Image(), new Image(), new Image()],
+      planes: [],
       missile: new Image(),
       coin: new Image(),
-      shield: new Image()
+      newCoin: new Image(),
+      shield: new Image(),
+      magnet: new Image()
     };
-    assets.planes[0].src = 'images/plane1.png';
-    assets.planes[1].src = 'images/plane2.png';
-    assets.planes[2].src = 'images/plane3.png';
-    assets.planes[3].src = 'images/plane4.png';
-    assets.missile.src = 'images/missile.png';
-    assets.coin.src = 'images/coin.png';
-    assets.shield.src = 'images/shield.png';
-
-    // Sounds
-    const moveSound = new Audio('sounds/move.mp3');
-    const boosterSound = new Audio('sounds/booster.mp3');
-    const explosionSound = new Audio('sounds/explosion.mp3');
-    const clickSound = new Audio('sounds/click.mp3');
-    const coinSound = new Audio('sounds/coinsound.mp3');
-    const shieldCollectedSound = new Audio('sounds/shieldcollected.mp3');
-
-    // Background music
-    const backgroundMusic = new Audio('sounds/background.mp3');
-    backgroundMusic.loop = true;
-    backgroundMusic.volume = 0.5;
-    // Stop music on page exit
-    window.addEventListener('beforeunload', () => {
-      backgroundMusic.pause();
+    let assetsLoaded = 0;
+    let totalAssets = GAME_CONFIG.planeImages.length + 5; // planes + missile, coin, newcoin, shield, magnet
+    
+    // Initialize plane images array
+    for (let i = 0; i < GAME_CONFIG.planeImages.length; i++) {
+      assets.planes[i] = new Image();
+    }
+    
+    function loadAsset(img, src) {
+      img.onload = () => {
+        assetsLoaded++;
+        if (assetsLoaded === totalAssets) init();
+      };
+      img.onerror = () => {
+        console.error("Failed to load asset: " + src);
+        assetsLoaded++;
+        if (assetsLoaded === totalAssets) init();
+      };
+      img.src = src;
+    }
+    
+    // Load images
+    GAME_CONFIG.planeImages.forEach((plane, i) => {
+      loadAsset(assets.planes[i], plane.src);
     });
-
-    /* =========================
-       Plane & Movement Setup
-       ========================= */
-    // We'll do lane-based horizontal positions, plus vertical "steps".
-    // We'll also do interpolation for smooth movement:
-    // plane.x, plane.y = actual current position
-    // plane.targetX, plane.targetY = where we want to go
-    let currentPlane = 0; // default plane
-    const lanePositions = [0.15, 0.3, 0.5, 0.7, 0.85]; // 5 horizontal lanes
-    const verticalSteps = [0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0]; // 7 vertical positions
-
-    let currentLane = 2; // start center horizontally
-    let currentStep = 4; // start around the middle vertically
-
-    const plane = {
-      x: 0, y: 0, // actual position
-      targetX: 0, targetY: 0, // desired position
-      width: 60,
-      height: 60
+    loadAsset(assets.missile, 'images/missile.png');
+    loadAsset(assets.coin, 'images/coin.png');
+    loadAsset(assets.newCoin, 'images/newcoin.png');
+    loadAsset(assets.shield, 'images/shield.png');
+    loadAsset(assets.magnet, 'images/magnet.png');
+    
+    // Fallback in case assets take too long
+    setTimeout(() => {
+      if (gameState === 'menu' && assetsLoaded < totalAssets) {
+        console.warn("Fallback init: Not all assets loaded in time.");
+        init();
+      }
+    }, 5000);
+    
+    // Sounds
+    const sounds = {
+      move: new Audio('sounds/move.mp3'),
+      booster: new Audio('sounds/booster.mp3'),
+      explosion: new Audio('sounds/explosion.mp3'),
+      click: new Audio('sounds/click.mp3'),
+      coin: new Audio('sounds/coinsound.mp3'),
+      shield: new Audio('sounds/shieldcollected.mp3'),
+      collision: new Audio('sounds/collision.mp3'),
+      background: new Audio('sounds/background.mp3')
     };
-
+    
+    function playSound(sound) {
+      try {
+        if (sounds[sound]) {
+          sounds[sound].currentTime = 0;
+          sounds[sound].play().catch(e => console.log("Error playing " + sound, e));
+        }
+      } catch (error) {
+        console.log("Error playing sound: " + sound, error);
+      }
+    }
+    
+    function playBackgroundMusic() {
+      try {
+        sounds.background.loop = true;
+        sounds.background.volume = parseFloat(document.getElementById('volumeSlider').value) / 100 || 0.5;
+        sounds.background.play().catch(e => console.log("Background music error", e));
+      } catch (error) {
+        console.log("Background music error", error);
+      }
+    }
+    
+    function pauseBackgroundMusic() {
+      try { sounds.background.pause(); } catch (error) { console.log(error); }
+    }
+    
+    function stopBackgroundMusic() {
+      try { sounds.background.pause(); sounds.background.currentTime = 0; } catch (error) { console.log(error); }
+    }
+    
+    function playCollisionSound() {
+      try {
+        pauseBackgroundMusic();
+        playSound('collision');
+        sounds.collision.onended = () => {
+          if (gameState === 'playing') playBackgroundMusic();
+        };
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    
+    /* =========================
+       Game Objects & Functions
+       ========================= */
+    const plane = {
+      x: canvas.width / 2,
+      y: canvas.height * 0.7,
+      width: 60,
+      height: 60,
+      speed: GAME_CONFIG.planeSpeed,
+      getBounds() {
+        return {
+          left: this.x - this.width / 2,
+          right: this.x + this.width / 2,
+          top: this.y - this.height / 2,
+          bottom: this.y + this.height / 2
+        };
+      },
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.drawImage(assets.planes[selectedPlane], -this.width / 2, -this.height / 2, this.width, this.height);
+        if (isShieldActive) {
+          ctx.beginPath();
+          ctx.arc(0, 0, this.width / 1.5, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(0,200,255,0.8)';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(0,200,255,0.2)';
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    };
+    
+    let missiles = [], coinsArray = [], powerups = [];
+    let isShieldActive = false, isMagnetActive = false;
+    let shieldEndTime = 0, magnetEndTime = 0;
+    let lastMissileTime = 0, lastCoinTime = 0, lastNewCoinTime = 0;
+    let lastShieldTime = 0, lastMagnetTime = 0;
+    let keysPressed = {};
+    let isTouching = false, touchX = 0, touchY = 0, lastTouchX = 0, lastTouchY = 0;
+    
     function resetPlanePosition() {
-      plane.x = lanePositions[currentLane] * canvas.width;
-      plane.y = verticalSteps[currentStep] * canvas.height;
-      plane.targetX = plane.x;
-      plane.targetY = plane.y;
+      plane.x = canvas.width / 2;
+      plane.y = canvas.height * 0.7;
     }
-
-    // Shield state
-    let isShieldActive = false;
-
-    // Missiles, coins, shields
-    let missiles = [];
-    let coinsArray = [];
-    let shieldsArray = [];
-
-    let lastMissileTime = 0;
-    let missileInterval = 1500;
-    let lastCoinTime = 0;
-    let coinInterval = 5000;
-    let lastShieldTime = 0;
-    let shieldInterval = 15000;
-
-    // Each plane has an expiry for unlocking
-    let unlockedPlanes = JSON.parse(localStorage.getItem('unlockedPlanes'));
-    if (!unlockedPlanes) {
-      unlockedPlanes = [
-        { expiry: null }, // plane1 default
-        { expiry: 0 },    // plane2
-        { expiry: 0 },    // plane3
-        { expiry: 0 }     // plane4
-      ];
-    } else {
-      while (unlockedPlanes.length < 4) {
-        unlockedPlanes.push({ expiry: 0 });
-      }
+    
+    function spawnMissile() {
+      const missileWidth = 30, missileHeight = 60;
+      missiles.push({
+        x: Math.random() * canvas.width,
+        y: -missileHeight,
+        width: missileWidth,
+        height: missileHeight,
+        speed: GAME_CONFIG.missileSpeed * getDifficultyFactor(),
+        getBounds() {
+          return {
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
+          };
+        },
+        draw() {
+          ctx.drawImage(assets.missile, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+        }
+      });
     }
-
-    /* =========================
-       Resize Canvas to Fill Screen
-       ========================= */
-    function resizeCanvas() {
-      canvas.width = document.getElementById('gameContainer').clientWidth;
-      canvas.height = document.getElementById('gameContainer').clientHeight;
-      resetPlanePosition();
+    
+    function spawnCoin(isNewCoin = false) {
+      const coinSize = 30;
+      const coinValue = isNewCoin ? GAME_CONFIG.newCoinValue : GAME_CONFIG.coinValue;
+      const coinImage = isNewCoin ? assets.newCoin : assets.coin;
+      coinsArray.push({
+        x: Math.random() * canvas.width,
+        y: -coinSize,
+        width: coinSize,
+        height: coinSize,
+        speed: GAME_CONFIG.coinSpeed,
+        value: coinValue,
+        isNewCoin: isNewCoin,
+        isAttracted: false,
+        image: coinImage,
+        getBounds() {
+          return {
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
+          };
+        },
+        draw() {
+          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+        }
+      });
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // call initially
-
-    /* =========================
-       Game Loop
-       ========================= */
+    
+    // For magnet power-up, use a larger size for a more attractive look
+    function spawnPowerup(type) {
+      const powerupSize = type === 'magnet' ? 60 : 40;
+      const powerupImage = type === 'shield' ? assets.shield : assets.magnet;
+      powerups.push({
+        x: Math.random() * canvas.width,
+        y: -powerupSize,
+        width: powerupSize,
+        height: powerupSize,
+        speed: GAME_CONFIG.coinSpeed,
+        type: type,
+        image: powerupImage,
+        getBounds() {
+          return {
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
+          };
+        },
+        draw() {
+          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+        }
+      });
+    }
+    
+    function activateShield() {
+      isShieldActive = true;
+      shieldEndTime = Date.now() + GAME_CONFIG.shieldDuration;
+      playSound('shield');
+    }
+    
+    function activateMagnet() {
+      isMagnetActive = true;
+      magnetEndTime = Date.now() + GAME_CONFIG.magnetDuration;
+      playSound('booster');
+    }
+    
+    function updatePowerupStates() {
+      const now = Date.now();
+      if (isShieldActive && now > shieldEndTime) isShieldActive = false;
+      if (isMagnetActive && now > magnetEndTime) isMagnetActive = false;
+    }
+    
+    function checkCollision(obj1, obj2) {
+      const b1 = obj1.getBounds(), b2 = obj2.getBounds();
+      return !(b1.right < b2.left || b1.left > b2.right || b1.bottom < b2.top || b1.top > b2.bottom);
+    }
+    
     function gameLoop(timestamp) {
-      if (gameState !== 'playing') return;
-
-      // Clear screen
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Interpolate plane position for smooth movement
-      plane.x += (plane.targetX - plane.x) * 0.2;
-      plane.y += (plane.targetY - plane.y) * 0.2;
-
-      // Difficulty factor
-      const difficulty = getDifficultyFactor();
-
-      // Spawning logic
-      if (timestamp - lastMissileTime > missileInterval) {
-        spawnMissile(difficulty);
-        lastMissileTime = timestamp;
+      const deltaTime = timestamp - lastFrameTime;
+      if (deltaTime >= frameInterval) {
+        lastFrameTime = timestamp - (deltaTime % frameInterval);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (gameState === 'playing') {
+          updateGame();
+          drawGame();
+        }
       }
-      if (timestamp - lastCoinTime > coinInterval) {
-        spawnCoin(difficulty);
-        lastCoinTime = timestamp;
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+    
+    function updateGame() {
+      score += 0.1;
+      updateUI();
+      updatePowerupStates();
+      handlePlayerMovement();
+      const currentTime = Date.now();
+      if (currentTime - lastMissileTime > GAME_CONFIG.missileSpawnRate / getDifficultyFactor()) {
+        spawnMissile();
+        lastMissileTime = currentTime;
       }
-      if (timestamp - lastShieldTime > shieldInterval) {
-        spawnShield(difficulty);
-        lastShieldTime = timestamp;
+      if (currentTime - lastCoinTime > GAME_CONFIG.coinSpawnRate) {
+        spawnCoin(false);
+        lastCoinTime = currentTime;
       }
-
-      // Update objects
+      if (currentTime - lastNewCoinTime > GAME_CONFIG.newCoinSpawnRate) {
+        spawnCoin(true);
+        lastNewCoinTime = currentTime;
+      }
+      if (currentTime - lastShieldTime > GAME_CONFIG.shieldSpawnRate) {
+        spawnPowerup('shield');
+        lastShieldTime = currentTime;
+      }
+      if (currentTime - lastMagnetTime > GAME_CONFIG.magnetSpawnRate) {
+        spawnPowerup('magnet');
+        lastMagnetTime = currentTime;
+      }
       updateMissiles();
       updateCoins();
-      updateShields();
-
-      // Check collisions
-      checkCollisions();
-
-      // Draw everything
-      drawPlane();
-      drawMissiles();
-      drawCoins();
-      drawShields();
-
-      // Increase score
-      score += 0.5; // tweak as desired
-      if (score > highScore) {
+      updatePowerups();
+    }
+    
+    function updateMissiles() {
+      for (let i = missiles.length - 1; i >= 0; i--) {
+        let m = missiles[i];
+        m.y += m.speed;
+        if (m.y > canvas.height + m.height) {
+          missiles.splice(i, 1);
+          continue;
+        }
+        if (checkCollision(plane, m)) {
+          if (isShieldActive) {
+            missiles.splice(i, 1);
+            playSound('explosion');
+          } else {
+            gameOver();
+            return;
+          }
+        }
+      }
+    }
+    
+    function updateCoins() {
+      for (let i = coinsArray.length - 1; i >= 0; i--) {
+        let coin = coinsArray[i];
+        if (isMagnetActive) {
+          let dx = plane.x - coin.x, dy = plane.y - coin.y;
+          let distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < GAME_CONFIG.magnetAttractionRadius) coin.isAttracted = true;
+          if (coin.isAttracted) {
+            let angle = Math.atan2(dy, dx);
+            coin.x += Math.cos(angle) * GAME_CONFIG.magnetAttractionSpeed;
+            coin.y += Math.sin(angle) * GAME_CONFIG.magnetAttractionSpeed;
+          } else {
+            coin.y += coin.speed;
+          }
+        } else {
+          coin.y += coin.speed;
+        }
+        if (coin.y > canvas.height + coin.height) {
+          coinsArray.splice(i, 1);
+          continue;
+        }
+        if (checkCollision(plane, coin)) {
+          coins += coin.value;
+          coinsCollected += coin.value;
+          coinsArray.splice(i, 1);
+          playSound('coin');
+          updateUI();
+          continue;
+        }
+      }
+    }
+    
+    function updatePowerups() {
+      for (let i = powerups.length - 1; i >= 0; i--) {
+        let p = powerups[i];
+        p.y += p.speed;
+        if (p.y > canvas.height + p.height) {
+          powerups.splice(i, 1);
+          continue;
+        }
+        if (checkCollision(plane, p)) {
+          if (p.type === 'shield') activateShield();
+          else if (p.type === 'magnet') activateMagnet();
+          powerups.splice(i, 1);
+          continue;
+        }
+      }
+    }
+    
+    function handlePlayerMovement() {
+      const speed = plane.speed;
+      if (keysPressed['ArrowLeft'] || keysPressed['a']) plane.x -= speed;
+      if (keysPressed['ArrowRight'] || keysPressed['d']) plane.x += speed;
+      if (keysPressed['ArrowUp'] || keysPressed['w']) plane.y -= speed;
+      if (keysPressed['ArrowDown'] || keysPressed['s']) plane.y += speed;
+      if (isTouching) {
+        let dx = touchX - lastTouchX, dy = touchY - lastTouchY;
+        if (Math.abs(dx) > 1) plane.x += dx / 2;
+        if (Math.abs(dy) > 1) plane.y += dy / 2;
+        lastTouchX = touchX;
+        lastTouchY = touchY;
+      }
+      plane.x = Math.max(plane.width / 2, Math.min(canvas.width - plane.width / 2, plane.x));
+      plane.y = Math.max(plane.height / 2, Math.min(canvas.height - plane.height / 2, plane.y));
+    }
+    
+    function drawGame() {
+      plane.draw();
+      missiles.forEach(m => m.draw());
+      coinsArray.forEach(c => c.draw());
+      powerups.forEach(p => p.draw());
+      if (isShieldActive || isMagnetActive) {
+        let y = 50;
+        if (isShieldActive) {
+          let timeLeft = (shieldEndTime - Date.now()) / 1000;
+          ctx.fillStyle = 'rgba(0,200,255,0.7)';
+          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft / (GAME_CONFIG.shieldDuration / 1000)), 20);
+          ctx.strokeStyle = 'white';
+          ctx.strokeRect(canvas.width - 150, y, 140, 20);
+          ctx.fillStyle = 'white';
+          ctx.font = '14px Arial';
+          ctx.fillText('Shield', canvas.width - 140, y + 15);
+          y += 30;
+        }
+        if (isMagnetActive) {
+          let timeLeft = (magnetEndTime - Date.now()) / 1000;
+          ctx.fillStyle = 'rgba(255,100,0,0.7)';
+          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft / (GAME_CONFIG.magnetDuration / 1000)), 20);
+          ctx.strokeStyle = 'white';
+          ctx.strokeRect(canvas.width - 150, y, 140, 20);
+          ctx.fillStyle = 'white';
+          ctx.font = '14px Arial';
+          ctx.fillText('Magnet', canvas.width - 140, y + 15);
+        }
+      }
+    }
+    
+    function gameOver() {
+      gameState = 'gameover';
+      stopBackgroundMusic();
+      playCollisionSound();
+      if (Math.floor(score) > highScore) {
         highScore = Math.floor(score);
         localStorage.setItem('highScore', highScore);
       }
-      updateUI();
-
-      // If plane is out of bounds, game over
-      if (plane.x < 0 || plane.x > canvas.width || plane.y < 0 || plane.y > canvas.height) {
-        gameOver();
-        return;
-      }
-
-      requestAnimationFrame(gameLoop);
+      coins += coinsCollected;
+      localStorage.setItem('coins', coins);
+      document.getElementById('gameUI').classList.add('hidden');
+      document.getElementById('controls').classList.add('hidden');
+      document.getElementById('finalScore').textContent = Math.floor(score);
+      document.getElementById('finalCoins').textContent = coinsCollected;
+      document.getElementById('gameOverMenu').classList.remove('hidden');
     }
-
-    /* =========================
-       Drawing & Object Updates
-       ========================= */
-    function drawPlane() {
-      ctx.drawImage(
-        assets.planes[currentPlane],
-        plane.x - plane.width / 2,
-        plane.y - plane.height / 2,
-        plane.width,
-        plane.height
-      );
-      // If shield is active, draw a bright green border
-      if (isShieldActive) {
-        ctx.save();
-        ctx.strokeStyle = "lime";
-        ctx.lineWidth = 5;
-        ctx.strokeRect(
-          plane.x - plane.width / 2,
-          plane.y - plane.height / 2,
-          plane.width,
-          plane.height
-        );
-        ctx.restore();
-      }
-    }
-
-    // Missiles
-    const missileSize = 40;
-    function spawnMissile(difficulty) {
-      const laneIndex = Math.floor(Math.random() * lanePositions.length);
-      const xPos = lanePositions[laneIndex] * canvas.width;
-      missiles.push({
-        x: xPos,
-        y: -50,
-        speed: 4 * difficulty,
-        size: missileSize
-      });
-    }
-    function updateMissiles() {
-      for (let i = missiles.length - 1; i >= 0; i--) {
-        missiles[i].y += missiles[i].speed;
-        // remove if off screen
-        if (missiles[i].y > canvas.height + 50) {
-          missiles.splice(i, 1);
-          // small reward for dodging a missile
-          coins += 1;
-          localStorage.setItem('coins', coins);
-        }
-      }
-    }
-    function drawMissiles() {
-      for (const m of missiles) {
-        ctx.drawImage(
-          assets.missile,
-          m.x - m.size / 2,
-          m.y - m.size / 2,
-          m.size,
-          m.size
-        );
-      }
-    }
-
-    // Coins
-    const coinSize = 30;
-    function spawnCoin(difficulty) {
-      const laneIndex = Math.floor(Math.random() * lanePositions.length);
-      const xPos = lanePositions[laneIndex] * canvas.width;
-      coinsArray.push({
-        x: xPos,
-        y: -30,
-        speed: 3 * difficulty,
-        size: coinSize
-      });
-    }
-    function updateCoins() {
-      for (let i = coinsArray.length - 1; i >= 0; i--) {
-        coinsArray[i].y += coinsArray[i].speed;
-        if (coinsArray[i].y > canvas.height + coinsArray[i].size) {
-          coinsArray.splice(i, 1);
-        }
-      }
-    }
-    function drawCoins() {
-      for (const c of coinsArray) {
-        ctx.drawImage(
-          assets.coin,
-          c.x - c.size / 2,
-          c.y - c.size / 2,
-          c.size,
-          c.size
-        );
-      }
-    }
-
-    // Shields
-    const shieldSize = 30;
-    function spawnShield(difficulty) {
-      const laneIndex = Math.floor(Math.random() * lanePositions.length);
-      const xPos = lanePositions[laneIndex] * canvas.width;
-      shieldsArray.push({
-        x: xPos,
-        y: -30,
-        speed: 2 * difficulty,
-        size: shieldSize
-      });
-    }
-    function updateShields() {
-      for (let i = shieldsArray.length - 1; i >= 0; i--) {
-        shieldsArray[i].y += shieldsArray[i].speed;
-        if (shieldsArray[i].y > canvas.height + shieldsArray[i].size) {
-          shieldsArray.splice(i, 1);
-        }
-      }
-    }
-    function drawShields() {
-      for (const s of shieldsArray) {
-        ctx.drawImage(
-          assets.shield,
-          s.x - s.size / 2,
-          s.y - s.size / 2,
-          s.size,
-          s.size
-        );
-      }
-    }
-
-    /* =========================
-       Collision Detection
-       ========================= */
-    function checkCollisions() {
-      // Missiles
-      for (let i = missiles.length - 1; i >= 0; i--) {
-        const dx = missiles[i].x - plane.x;
-        const dy = missiles[i].y - plane.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (!isShieldActive && dist < (plane.width / 2 + missiles[i].size / 2)) {
-          gameOver();
-          return;
-        }
-      }
-      // Coins
-      for (let i = coinsArray.length - 1; i >= 0; i--) {
-        const dx = coinsArray[i].x - plane.x;
-        const dy = coinsArray[i].y - plane.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < (plane.width / 2 + coinsArray[i].size / 2)) {
-          // collect coin
-          coins += 10;
-          coinSound.currentTime = 0;
-          coinSound.play();
-          coinsArray.splice(i, 1);
-          localStorage.setItem('coins', coins);
-        }
-      }
-      // Shields
-      for (let i = shieldsArray.length - 1; i >= 0; i--) {
-        const dx = shieldsArray[i].x - plane.x;
-        const dy = shieldsArray[i].y - plane.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < (plane.width / 2 + shieldsArray[i].size / 2)) {
-          // activate shield
-          isShieldActive = true;
-          shieldCollectedSound.currentTime = 0;
-          shieldCollectedSound.play();
-          shieldsArray.splice(i, 1);
-          setTimeout(() => {
-            isShieldActive = false;
-          }, 10000); // shield lasts 10s
-        }
-      }
-    }
-
-    /* =========================
-       Game State Handlers
-       ========================= */
-    function gameOver() {
-      explosionSound.play();
-      gameState = 'gameover';
-      document.getElementById('pauseMenu').classList.remove('hidden');
-      // Hide arrow controls when not playing
-      document.getElementById('arrowControls').style.display = 'none';
-    }
-
-    function showMainMenu() {
-      gameState = 'menu';
-      document.getElementById('mainMenu').classList.remove('hidden');
-      document.getElementById('pauseMenu').classList.add('hidden');
-      document.getElementById('arrowControls').style.display = 'none';
-      backgroundMusic.pause();
-    }
-
-    function startGame() {
-      playClickSound();
+    
+    function restartGame() {
       gameState = 'playing';
       score = 0;
+      coinsCollected = 0;
       missiles = [];
       coinsArray = [];
-      shieldsArray = [];
+      powerups = [];
+      lastMissileTime = Date.now();
+      lastCoinTime = Date.now();
+      lastNewCoinTime = Date.now();
+      lastShieldTime = Date.now();
+      lastMagnetTime = Date.now();
       isShieldActive = false;
-      currentLane = 2;
-      currentStep = 4;
+      isMagnetActive = false;
       resetPlanePosition();
-
-      // Always default plane selected if locked planes are not purchased
-      currentPlane = 0; 
-      // Start music
-      backgroundMusic.play().catch(() => {});
-
-      // Hide menus, show arrow controls
+      document.getElementById('gameOverMenu').classList.add('hidden');
       document.getElementById('mainMenu').classList.add('hidden');
-      document.getElementById('pauseMenu').classList.add('hidden');
-      document.getElementById('arrowControls').style.display = 'grid';
-
-      updateUI();
-      requestAnimationFrame(gameLoop);
+      document.getElementById('gameUI').classList.remove('hidden');
+      document.getElementById('controls').classList.remove('hidden');
+      playBackgroundMusic();
     }
-
-    function resumeGame() {
-      gameState = 'playing';
-      document.getElementById('pauseMenu').classList.add('hidden');
-      document.getElementById('arrowControls').style.display = 'grid';
-      backgroundMusic.play();
-      requestAnimationFrame(gameLoop);
-    }
-
-    function restartGame() {
-      startGame();
-    }
-
-    function togglePause() {
-      playClickSound();
+    
+    function pauseGame() {
       if (gameState === 'playing') {
         gameState = 'paused';
+        pauseBackgroundMusic();
         document.getElementById('pauseMenu').classList.remove('hidden');
-        document.getElementById('arrowControls').style.display = 'none';
-        backgroundMusic.pause();
-      } else if (gameState === 'paused') {
-        resumeGame();
       }
     }
-
+    
+    function resumeGame() {
+      if (gameState === 'paused') {
+        gameState = 'playing';
+        playBackgroundMusic();
+        document.getElementById('pauseMenu').classList.add('hidden');
+      }
+    }
+    
+    function returnToMainMenu() {
+      gameState = 'menu';
+      stopBackgroundMusic();
+      document.getElementById('pauseMenu').classList.add('hidden');
+      document.getElementById('gameOverMenu').classList.add('hidden');
+      document.getElementById('gameUI').classList.add('hidden');
+      document.getElementById('controls').classList.add('hidden');
+      document.getElementById('mainMenu').classList.remove('hidden');
+    }
+    
     /* =========================
-       Store & Settings
-       ========================= */
-    function toggleStore() {
-      playClickSound();
-      const storeModal = document.getElementById('storeModal');
-      if (storeModal.classList.contains('hidden')) {
-        storeModal.classList.remove('hidden');
-        // Pause if in game
-        if (gameState === 'playing') {
-          gameState = 'paused';
-          document.getElementById('arrowControls').style.display = 'none';
-        }
-      } else {
-        storeModal.classList.add('hidden');
-        if (gameState === 'paused') {
-          gameState = 'playing';
-          document.getElementById('arrowControls').style.display = 'grid';
-          requestAnimationFrame(gameLoop);
-        }
-      }
-    }
-
-    function toggleSettings() {
-      playClickSound();
-      const settingsModal = document.getElementById('settingsModal');
-      if (settingsModal.classList.contains('hidden')) {
-        settingsModal.classList.remove('hidden');
-        if (gameState === 'playing') {
-          gameState = 'paused';
-          document.getElementById('arrowControls').style.display = 'none';
-        }
-      } else {
-        settingsModal.classList.add('hidden');
-        if (gameState === 'paused') {
-          gameState = 'playing';
-          document.getElementById('arrowControls').style.display = 'grid';
-          requestAnimationFrame(gameLoop);
-        }
-      }
-    }
-
-    function setMusicVolume(value) {
-      const vol = parseInt(value, 10) / 100;
-      backgroundMusic.volume = vol;
-      document.getElementById('volumeDisplay').textContent = value + "%";
-    }
-
-    // Buying or selecting planes
-    function buyPlane(planeId) {
-      const index = planeId - 1;
-      const now = Date.now();
-      if (index === 0) {
-        // default plane
-        currentPlane = 0;
-        alert("Default Plane selected.");
-        return;
-      }
-      if (unlockedPlanes[index].expiry && unlockedPlanes[index].expiry > now) {
-        currentPlane = index;
-        alert("Plane " + planeId + " is already unlocked and selected.");
-      } else {
-        // cost 100 coins
-        if (coins >= 100) {
-          coins -= 100;
-          unlockedPlanes[index].expiry = now + 86400000; // 24 hours
-          currentPlane = index;
-          alert("Plane " + planeId + " unlocked for 24 hours.");
-          localStorage.setItem('unlockedPlanes', JSON.stringify(unlockedPlanes));
-          localStorage.setItem('coins', coins);
-          updateUI();
-        } else {
-          alert("Not enough coins to unlock Plane " + planeId + ".");
-        }
-      }
-    }
-
-    /* =========================
-       Controls & Swipe
-       ========================= */
-    // Arrow keys
-    document.addEventListener('keydown', (e) => {
-      if (gameState === 'playing') {
-        if (e.key === 'ArrowLeft') {
-          arrowAction('left');
-        } else if (e.key === 'ArrowRight') {
-          arrowAction('right');
-        } else if (e.key === 'ArrowUp') {
-          arrowAction('up');
-        } else if (e.key === 'ArrowDown') {
-          arrowAction('down');
-        } else if (e.key === 'Escape') {
-          togglePause();
-        }
-      } else if (gameState === 'paused' || gameState === 'gameover') {
-        if (e.key === 'Escape') {
-          showMainMenu();
-        }
-      }
-    });
-
-    // Diamond arrow button clicks
-    function arrowAction(direction) {
-      if (gameState !== 'playing') return;
-      if (direction === 'left') {
-        if (currentLane > 0) {
-          currentLane--;
-          plane.targetX = lanePositions[currentLane] * canvas.width;
-          moveSound.play();
-        }
-      } else if (direction === 'right') {
-        if (currentLane < lanePositions.length - 1) {
-          currentLane++;
-          plane.targetX = lanePositions[currentLane] * canvas.width;
-          moveSound.play();
-        }
-      } else if (direction === 'up') {
-        if (currentStep > 0) {
-          currentStep--;
-          plane.targetY = verticalSteps[currentStep] * canvas.height;
-          boosterSound.play();
-        }
-      } else if (direction === 'down') {
-        if (currentStep < verticalSteps.length - 1) {
-          currentStep++;
-          plane.targetY = verticalSteps[currentStep] * canvas.height;
-          moveSound.play();
-        }
-      }
-    }
-
-    // Swipe detection (like Subway Surfers)
-    let touchStartX = 0, touchStartY = 0;
-    canvas.addEventListener('touchstart', (e) => {
-      const touch = e.changedTouches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-    });
-    canvas.addEventListener('touchend', (e) => {
-      if (gameState !== 'playing') return;
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - touchStartX;
-      const deltaY = touch.clientY - touchStartY;
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      const swipeThreshold = 30; // minimal distance to consider a swipe
-      if (absX > absY && absX > swipeThreshold) {
-        // horizontal swipe
-        if (deltaX > 0) {
-          arrowAction('right');
-        } else {
-          arrowAction('left');
-        }
-      } else if (absY > swipeThreshold) {
-        // vertical swipe
-        if (deltaY > 0) {
-          arrowAction('down');
-        } else {
-          arrowAction('up');
-        }
-      }
-    });
-
-    /* =========================
-       UI & Initialization
+       UI & Store Functions
        ========================= */
     function updateUI() {
       document.getElementById('score').textContent = Math.floor(score);
       document.getElementById('highScore').textContent = highScore;
       document.getElementById('coins').textContent = coins;
+      document.getElementById('storeCoins').textContent = coins;
     }
-
-    function playClickSound() {
-      clickSound.currentTime = 0;
-      clickSound.play();
+    
+    function populateStore() {
+      const planesList = document.getElementById('planesList');
+      planesList.innerHTML = '';
+      GAME_CONFIG.planeImages.forEach(planeInfo => {
+        const planeItem = document.createElement('div');
+        planeItem.className = 'plane-item';
+        if (ownedPlanes.includes(planeInfo.id)) planeItem.classList.add('owned');
+        if (selectedPlane === planeInfo.id) planeItem.classList.add('selected');
+        const planeImage = document.createElement('img');
+        planeImage.src = planeInfo.src;
+        planeImage.alt = planeInfo.name;
+        const planeName = document.createElement('h3');
+        planeName.textContent = planeInfo.name;
+        const planePrice = document.createElement('div');
+        if (ownedPlanes.includes(planeInfo.id)) {
+          const selectButton = document.createElement('button');
+          selectButton.textContent = selectedPlane === planeInfo.id ? 'Selected' : 'Select';
+          selectButton.disabled = selectedPlane === planeInfo.id;
+          selectButton.addEventListener('click', () => {
+            selectPlane(planeInfo.id);
+            populateStore();
+            playSound('click');
+          });
+          planePrice.appendChild(selectButton);
+        } else {
+          planePrice.textContent = `${planeInfo.price} coins`;
+          if (coins >= planeInfo.price) {
+            const buyButton = document.createElement('button');
+            buyButton.textContent = 'Buy';
+            buyButton.addEventListener('click', () => {
+              buyPlane(planeInfo.id, planeInfo.price);
+              populateStore();
+              playSound('click');
+            });
+            planePrice.appendChild(buyButton);
+          }
+        }
+        planeItem.appendChild(planeImage);
+        planeItem.appendChild(planeName);
+        planeItem.appendChild(planePrice);
+        planesList.appendChild(planeItem);
+      });
     }
-
+    
+    // Modified to auto-close the store and return to main menu upon selection.
+    function buyPlane(planeId, price) {
+      if (coins >= price && !ownedPlanes.includes(planeId)) {
+        coins -= price;
+        ownedPlanes.push(planeId);
+        selectPlane(planeId);
+        localStorage.setItem('coins', coins);
+        localStorage.setItem('ownedPlanes', JSON.stringify(ownedPlanes));
+        updateUI();
+        // Auto-close store and show main menu after purchase/selection.
+        document.getElementById('storeModal').classList.add('hidden');
+        document.getElementById('mainMenu').classList.remove('hidden');
+      }
+    }
+    
+    function selectPlane(planeId) {
+      if (ownedPlanes.includes(planeId)) {
+        selectedPlane = planeId;
+        localStorage.setItem('selectedPlane', selectedPlane);
+        // Auto-close store and return to main menu upon selection.
+        document.getElementById('storeModal').classList.add('hidden');
+        document.getElementById('mainMenu').classList.remove('hidden');
+      }
+    }
+    
+    /* =========================
+       Input Handling
+       ========================= */
+    function setupKeyboardControls() {
+      window.addEventListener('keydown', e => {
+        keysPressed[e.key] = true;
+        if (e.key === 'Escape' && gameState === 'playing') pauseGame();
+      });
+      window.addEventListener('keyup', e => {
+        keysPressed[e.key] = false;
+      });
+    }
+    
+    function setupTouchControls() {
+      // Canvas touch
+      canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        isTouching = true;
+        touchX = e.touches[0].clientX;
+        touchY = e.touches[0].clientY;
+        lastTouchX = touchX;
+        lastTouchY = touchY;
+      }, { passive: false });
+      canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        touchX = e.touches[0].clientX;
+        touchY = e.touches[0].clientY;
+      }, { passive: false });
+      canvas.addEventListener('touchend', () => { isTouching = false; });
+      // Mouse events
+      canvas.addEventListener('mousedown', e => {
+        isTouching = true;
+        touchX = e.clientX;
+        touchY = e.clientY;
+        lastTouchX = touchX;
+        lastTouchY = touchY;
+      });
+      canvas.addEventListener('mousemove', e => {
+        if (isTouching) {
+          touchX = e.clientX;
+          touchY = e.clientY;
+        }
+      });
+      window.addEventListener('mouseup', () => { isTouching = false; });
+      // On-screen arrow buttons
+      document.getElementById('upButton').addEventListener('touchstart', e => {
+        e.preventDefault();
+        keysPressed['ArrowUp'] = true;
+      }, { passive: false });
+      document.getElementById('leftButton').addEventListener('touchstart', e => {
+        e.preventDefault();
+        keysPressed['ArrowLeft'] = true;
+      }, { passive: false });
+      document.getElementById('rightButton').addEventListener('touchstart', e => {
+        e.preventDefault();
+        keysPressed['ArrowRight'] = true;
+      }, { passive: false });
+      document.getElementById('downButton').addEventListener('touchstart', e => {
+        e.preventDefault();
+        keysPressed['ArrowDown'] = true;
+      }, { passive: false });
+      document.getElementById('upButton').addEventListener('touchend', () => { keysPressed['ArrowUp'] = false; });
+      document.getElementById('leftButton').addEventListener('touchend', () => { keysPressed['ArrowLeft'] = false; });
+      document.getElementById('rightButton').addEventListener('touchend', () => { keysPressed['ArrowRight'] = false; });
+      document.getElementById('downButton').addEventListener('touchend', () => { keysPressed['ArrowDown'] = false; });
+    }
+    
+    function setupMenuListeners() {
+      document.getElementById('startButton').addEventListener('click', () => {
+        restartGame();
+        playSound('click');
+      });
+      document.getElementById('settingsButton').addEventListener('click', () => {
+        document.getElementById('settingsModal').classList.remove('hidden');
+        playSound('click');
+      });
+      document.getElementById('storeButton').addEventListener('click', () => {
+        document.getElementById('storeModal').classList.remove('hidden');
+        populateStore();
+        playSound('click');
+      });
+      document.getElementById('closeSettings').addEventListener('click', () => {
+        document.getElementById('settingsModal').classList.add('hidden');
+        playSound('click');
+      });
+      document.getElementById('closeStore').addEventListener('click', () => {
+        document.getElementById('storeModal').classList.add('hidden');
+        playSound('click');
+      });
+      document.getElementById('resumeButton').addEventListener('click', () => {
+        resumeGame();
+        playSound('click');
+      });
+      document.getElementById('restartButton').addEventListener('click', () => {
+        restartGame();
+        playSound('click');
+      });
+      document.getElementById('mainMenuButton').addEventListener('click', () => {
+        returnToMainMenu();
+        playSound('click');
+      });
+      document.getElementById('restartButton2').addEventListener('click', () => {
+        restartGame();
+        playSound('click');
+      });
+      document.getElementById('mainMenuButton2').addEventListener('click', () => {
+        returnToMainMenu();
+        playSound('click');
+      });
+      document.getElementById('volumeSlider').addEventListener('input', e => {
+        const vol = parseFloat(e.target.value) / 100;
+        for (let s in sounds) { sounds[s].volume = vol; }
+      });
+    }
+    
     function init() {
-      // Default forced dark background (no toggle)
-      // Make sure plane is set to default
-      currentPlane = 0;
-      resetPlanePosition();
+      setupKeyboardControls();
+      setupTouchControls();
+      setupMenuListeners();
       updateUI();
+      // Hide controls initially (will be shown once game starts)
+      document.getElementById('controls').classList.add('hidden');
+      // Set volume from slider value
+      const volume = parseFloat(document.getElementById('volumeSlider').value) / 100;
+      for (let s in sounds) { sounds[s].volume = volume; }
+      lastFrameTime = performance.now();
+      animationFrameId = requestAnimationFrame(gameLoop);
     }
-    init();
   </script>
 </body>
 </html>
