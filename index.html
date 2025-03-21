@@ -1,27 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Aero Defender</title>
   <style>
-    /* Base styles */
+    /* Basic Resets */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background: #222;
+      background: #000;
       color: #fff;
       font-family: Arial, sans-serif;
       overflow: hidden;
       touch-action: none;
     }
-    /* Game container */
+    /* Game Container */
     #gameContainer {
-      position: absolute;
-      top: 0;
-      left: 0;
+      position: relative;
       width: 100vw;
       height: 100vh;
       background: #000;
@@ -37,25 +35,89 @@
       object-fit: cover;
       z-index: 0;
     }
-    /* Main game canvas */
+    /* Main Canvas */
     #gameCanvas {
       position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       z-index: 1;
     }
-    /* Game UI */
-    #gameUI {
+
+    /* =========================
+       TOP PANELS
+       ========================= */
+    /* Left Panel: High Score, Score, Coins (stacked) */
+    #topLeftPanel {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0,0,0,0.7);
-      padding: 10px;
-      border-radius: 5px;
-      z-index: 5;
-      font-size: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 20;
     }
-    /* Menu overlays */
+    #topLeftPanel div {
+      font-size: 1rem;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 8px;
+      border-radius: 4px;
+    }
+
+    /* Right Panel: Pause button, Shield bar, Magnet bar (stacked) */
+    #topRightPanel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      z-index: 20;
+    }
+    #pauseButton {
+      padding: 8px 12px;
+      background: #004080;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    /* Power-up bars for Shield and Magnet */
+    .powerup-bar {
+      position: relative;
+      width: 120px;
+      height: 20px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .powerup-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+    }
+    #shieldBar {
+      background: #00aaff;
+      width: 0%;
+    }
+    #magnetBar {
+      background: #ff6600;
+      width: 0%;
+    }
+    .powerup-label {
+      font-size: 0.9rem;
+      margin-bottom: 3px;
+      text-align: right;
+    }
+
+    /* =========================
+       MENUS & MODALS
+       ========================= */
     .menu-overlay {
       position: absolute;
       top: 0;
@@ -67,7 +129,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 10;
+      z-index: 30;
     }
     .menu-overlay h1 {
       font-size: 3rem;
@@ -85,7 +147,7 @@
       padding: 1rem 2rem;
       font-size: 1.2rem;
       background: #004080;
-      color: white;
+      color: #fff;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -95,7 +157,7 @@
     .menu-overlay button:hover {
       background: #0060a0;
     }
-    /* Modal overlays */
+    /* Modal Overlays (Settings, Store) */
     .modal-overlay {
       position: absolute;
       top: 0;
@@ -106,7 +168,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 15;
+      z-index: 40;
     }
     .modal-content {
       background: #333;
@@ -121,6 +183,24 @@
       display: flex;
       flex-direction: column;
     }
+    .settings-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .settings-tabs button {
+      padding: 8px 12px;
+      background: #004080;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .settings-tabs button.active {
+      background: #0060a0;
+    }
+
     /* Store items */
     .store-items {
       display: grid;
@@ -149,18 +229,19 @@
       top: 5px;
       right: 5px;
       background: green;
-      color: white;
+      color: #fff;
       padding: 2px 5px;
       border-radius: 3px;
       font-size: 0.8rem;
     }
-    /* On-screen control buttons */
+
+    /* On-screen Arrows (only when playing) */
     .control-buttons {
       position: absolute;
       left: 50%;
-      bottom: 60px; /* slightly up from the very bottom */
+      bottom: 60px;
       transform: translateX(-50%);
-      z-index: 5;
+      z-index: 50;
       display: grid;
       grid-template-areas:
         ". up ."
@@ -184,36 +265,49 @@
     #leftButton { grid-area: left; }
     #rightButton { grid-area: right; }
     #downButton { grid-area: down; }
-    /* Utility classes */
+
+    /* Utility */
     .hidden {
       display: none !important;
     }
-    /* Responsive adjustments */
     @media (max-width: 768px) {
-      .menu-overlay h1 {
-        font-size: 2rem;
-      }
-      .menu-overlay button {
-        padding: 0.8rem 1.6rem;
-        font-size: 1rem;
-        min-width: 180px;
-      }
-      .control-btn {
-        width: 50px;
-        height: 50px;
-      }
+      .menu-overlay h1 { font-size: 2rem; }
+      .menu-overlay button { padding: 0.8rem 1.6rem; font-size: 1rem; min-width: 180px; }
+      .control-btn { width: 50px; height: 50px; }
+      #pauseButton { font-size: 0.8rem; }
+      .powerup-label { font-size: 0.8rem; }
     }
   </style>
 </head>
 <body>
-  <!-- Game Container -->
   <div id="gameContainer">
     <!-- Background Video -->
     <video id="bgVideo" autoplay loop muted playsinline>
-      <source src="videos/bgvideo.mp4" type="video/mp4">
+      <source src="videos/bgvideo.mp4" type="video/mp4" />
       Your browser does not support the video tag.
     </video>
+    <!-- Main Canvas -->
     <canvas id="gameCanvas"></canvas>
+    
+    <!-- Top Left Panel -->
+    <div id="topLeftPanel" class="hidden">
+      <div id="highScoreContainer">High Score: <span id="highScoreDisplay">0</span></div>
+      <div id="scoreContainer">Score: <span id="scoreDisplay">0</span></div>
+      <div id="coinsContainer">Coins: <span id="coinsDisplay">0</span></div>
+    </div>
+
+    <!-- Top Right Panel -->
+    <div id="topRightPanel" class="hidden">
+      <button id="pauseButton">Pause</button>
+      <div class="powerup-label hidden" id="shieldLabel">Shield</div>
+      <div id="shieldIndicator" class="powerup-bar hidden">
+        <div id="shieldBar" class="powerup-fill"></div>
+      </div>
+      <div class="powerup-label hidden" id="magnetLabel">Magnet</div>
+      <div id="magnetIndicator" class="powerup-bar hidden">
+        <div id="magnetBar" class="powerup-fill"></div>
+      </div>
+    </div>
     
     <!-- Main Menu -->
     <div id="mainMenu" class="menu-overlay">
@@ -243,10 +337,23 @@
     <!-- Settings Modal -->
     <div id="settingsModal" class="modal-overlay hidden">
       <div class="modal-content">
-        <h2>Settings</h2>
-        <div class="setting-item">
+        <div class="settings-tabs">
+          <button id="volumeTab" class="active">Volume Controller</button>
+          <button id="aboutTab">About</button>
+        </div>
+        <div id="volumeContent" class="setting-item">
           <label for="volumeSlider">Volume</label>
-          <input type="range" id="volumeSlider" min="0" max="100" value="50">
+          <input type="range" id="volumeSlider" min="0" max="100" value="50" />
+        </div>
+        <div id="aboutContent" class="setting-item hidden">
+          <p>
+            Game Description: Aero Defender (Development Phase)<br />
+            Title: Aero Defender<br />
+            Genre: Arcade, Action, Endless Runner<br />
+            Platform: Web Browser (HTML5, JavaScript)<br />
+            Status: In Development<br />
+            Devloped.by.om.sn
+          </p>
         </div>
         <button id="closeSettings">Close</button>
       </div>
@@ -258,20 +365,13 @@
         <h2>Store</h2>
         <div>Your Coins: <span id="storeCoins">0</span></div>
         <div id="planesList" class="store-items">
-          <!-- Planes will be added dynamically -->
+          <!-- Dynamically populated planes -->
         </div>
         <button id="closeStore">Close</button>
       </div>
     </div>
     
-    <!-- Game UI -->
-    <div id="gameUI" class="hidden">
-      <div>Score: <span id="score">0</span></div>
-      <div>High Score: <span id="highScore">0</span></div>
-      <div>Coins: <span id="coins">0</span></div>
-    </div>
-    
-    <!-- On-screen Arrow Controls -->
+    <!-- On-screen Arrows (only shown while playing) -->
     <div id="controls" class="control-buttons hidden">
       <button id="upButton" class="control-btn">⬆️</button>
       <button id="leftButton" class="control-btn">⬅️</button>
@@ -282,33 +382,33 @@
   
   <script>
     /* =========================
-       Game Configuration
+       GAME CONFIGURATION
        ========================= */
     const GAME_CONFIG = {
-      missileSpawnRate: 1500,    // ms between missiles
-      coinSpawnRate: 2000,       // ms between coins
-      newCoinSpawnRate: 5000,    // ms between new coins
-      shieldSpawnRate: 15000,    // ms between shields
-      magnetSpawnRate: 30000,    // ms between magnets
-      magnetDuration: 10000,     // ms magnet is active
-      coinValue: 10,             // regular coin value
-      newCoinValue: 20,          // new coin value
-      planeSpeed: 5,             // speed for plane movement
-      missileSpeed: 4,           // speed for missiles
-      coinSpeed: 3,              // speed for coins
-      shieldDuration: 10000,     // ms shield lasts
-      magnetAttractionRadius: 150,
-      magnetAttractionSpeed: 8,
+      missileSpawnRate: 1500,
+      coinSpawnRate: 2000,
+      newCoinSpawnRate: 5000,
+      shieldSpawnRate: 15000,
+      magnetSpawnRate: 30000,
+      magnetDuration: 10000,
+      coinValue: 10,
+      newCoinValue: 20,
+      planeSpeed: 5,
+      missileSpeed: 4,
+      coinSpeed: 3,
+      shieldDuration: 10000,
+      magnetAttractionRadius: 250,
+      magnetAttractionSpeed: 12,
       planeImages: [
-        { id: 0, src: 'images/plane1.png', price: 0, name: 'Basic Plane' },
+        { id: 0, src: 'images/plane1.png', price: 0,   name: 'Basic Plane' },
         { id: 1, src: 'images/plane2.png', price: 100, name: 'Advanced Plane' },
-        { id: 2, src: 'images/plane3.png', price: 100, name: 'Stealth Plane' },
-        { id: 3, src: 'images/plane4.png', price: 100, name: 'Space Plane' }
+        { id: 2, src: 'images/plane3.png', price: 250, name: 'Stealth Plane' },
+        { id: 3, src: 'images/plane4.png', price: 500, name: 'Space Plane' }
       ]
     };
-    
+
     /* =========================
-       Global Variables & Setup
+       GLOBAL VARIABLES & SETUP
        ========================= */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -318,24 +418,25 @@
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
-    
-    let gameState = 'menu'; // menu, playing, paused, gameover
+
+    let gameState = 'menu'; // "menu", "playing", "paused", "gameover"
     let score = 0, coinsCollected = 0;
     let coins = parseInt(localStorage.getItem('coins')) || 0;
     let highScore = parseInt(localStorage.getItem('highScore')) || 0;
     let animationFrameId = null;
     let lastFrameTime = 0, FPS = 60;
     const frameInterval = 1000 / FPS;
-    
+
     // Owned planes and selection
     let ownedPlanes = JSON.parse(localStorage.getItem('ownedPlanes')) || [0];
     let selectedPlane = parseInt(localStorage.getItem('selectedPlane')) || 0;
-    
+
     function getDifficultyFactor() {
+      // Difficulty scales with score
       return 1 + score / 2000;
     }
-    
-    // Asset loading
+
+    // Asset Loading
     const assets = {
       planes: [],
       missile: new Image(),
@@ -345,13 +446,12 @@
       magnet: new Image()
     };
     let assetsLoaded = 0;
-    let totalAssets = GAME_CONFIG.planeImages.length + 5; // planes + missile, coin, newcoin, shield, magnet
-    
-    // Initialize plane images array
+    let totalAssets = GAME_CONFIG.planeImages.length + 5;
+
     for (let i = 0; i < GAME_CONFIG.planeImages.length; i++) {
       assets.planes[i] = new Image();
     }
-    
+
     function loadAsset(img, src) {
       img.onload = () => {
         assetsLoaded++;
@@ -364,8 +464,7 @@
       };
       img.src = src;
     }
-    
-    // Load images
+
     GAME_CONFIG.planeImages.forEach((plane, i) => {
       loadAsset(assets.planes[i], plane.src);
     });
@@ -374,15 +473,15 @@
     loadAsset(assets.newCoin, 'images/newcoin.png');
     loadAsset(assets.shield, 'images/shield.png');
     loadAsset(assets.magnet, 'images/magnet.png');
-    
-    // Fallback initialization in case assets take too long
+
+    // Fallback if assets load slowly
     setTimeout(() => {
       if (gameState === 'menu' && assetsLoaded < totalAssets) {
         console.warn("Fallback init: Not all assets loaded in time.");
         init();
       }
     }, 5000);
-    
+
     // Sounds
     const sounds = {
       move: new Audio('sounds/move.mp3'),
@@ -392,9 +491,17 @@
       coin: new Audio('sounds/coinsound.mp3'),
       shield: new Audio('sounds/shieldcollected.mp3'),
       collision: new Audio('sounds/collision.mp3'),
+      out: new Audio('sounds/out.mp3'),
       background: new Audio('sounds/background.mp3')
     };
-    
+
+    function updateVolume() {
+      const vol = parseFloat(document.getElementById('volumeSlider').value) / 100;
+      for (let key in sounds) {
+        sounds[key].volume = vol;
+      }
+    }
+
     function playSound(sound) {
       try {
         if (sounds[sound]) {
@@ -405,39 +512,34 @@
         console.log("Error playing sound: " + sound, error);
       }
     }
-    
+
     function playBackgroundMusic() {
       try {
         sounds.background.loop = true;
-        sounds.background.volume = parseFloat(document.getElementById('volumeSlider').value) / 100 || 0.5;
+        updateVolume();
         sounds.background.play().catch(e => console.log("Background music error", e));
       } catch (error) {
         console.log("Background music error", error);
       }
     }
-    
+
     function pauseBackgroundMusic() {
       try { sounds.background.pause(); } catch (error) { console.log(error); }
     }
-    
+
     function stopBackgroundMusic() {
       try { sounds.background.pause(); sounds.background.currentTime = 0; } catch (error) { console.log(error); }
     }
-    
-    function playCollisionSound() {
-      try {
-        pauseBackgroundMusic();
-        playSound('collision');
-        sounds.collision.onended = () => {
-          if (gameState === 'playing') playBackgroundMusic();
-        };
-      } catch (error) {
-        console.log(error);
+
+    function playOutSound() {
+      // Only if shield is not active
+      if (!isShieldActive) {
+        playSound('out');
       }
     }
-    
+
     /* =========================
-       Game Objects & Functions
+       GAME OBJECTS & FUNCTIONS
        ========================= */
     const plane = {
       x: canvas.width / 2,
@@ -457,9 +559,10 @@
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.drawImage(assets.planes[selectedPlane], -this.width/2, -this.height/2, this.width, this.height);
-        if(isShieldActive) {
+        // Draw shield circle if active
+        if (isShieldActive) {
           ctx.beginPath();
-          ctx.arc(0, 0, this.width/1.5, 0, Math.PI * 2);
+          ctx.arc(0, 0, this.width/1.5, 0, Math.PI*2);
           ctx.strokeStyle = 'rgba(0,200,255,0.8)';
           ctx.lineWidth = 3;
           ctx.stroke();
@@ -469,7 +572,7 @@
         ctx.restore();
       }
     };
-    
+
     let missiles = [], coinsArray = [], powerups = [];
     let isShieldActive = false, isMagnetActive = false;
     let shieldEndTime = 0, magnetEndTime = 0;
@@ -477,12 +580,12 @@
     let lastShieldTime = 0, lastMagnetTime = 0;
     let keysPressed = {};
     let isTouching = false, touchX = 0, touchY = 0, lastTouchX = 0, lastTouchY = 0;
-    
+
     function resetPlanePosition() {
       plane.x = canvas.width / 2;
       plane.y = canvas.height * 0.7;
     }
-    
+
     function spawnMissile() {
       const missileWidth = 30, missileHeight = 60;
       missiles.push({
@@ -504,8 +607,8 @@
         }
       });
     }
-    
-    function spawnCoin(isNewCoin = false) {
+
+    function spawnCoin(isNewCoin=false) {
       const coinSize = 30;
       const coinValue = isNewCoin ? GAME_CONFIG.newCoinValue : GAME_CONFIG.coinValue;
       const coinImage = isNewCoin ? assets.newCoin : assets.coin;
@@ -532,9 +635,9 @@
         }
       });
     }
-    
+
     function spawnPowerup(type) {
-      const powerupSize = 40;
+      const powerupSize = (type === 'magnet') ? 50 : 40;
       const powerupImage = type === 'shield' ? assets.shield : assets.magnet;
       powerups.push({
         x: Math.random() * canvas.width,
@@ -557,66 +660,96 @@
         }
       });
     }
-    
+
     function activateShield() {
       isShieldActive = true;
       shieldEndTime = Date.now() + GAME_CONFIG.shieldDuration;
       playSound('shield');
+      document.getElementById('shieldLabel').classList.remove('hidden');
+      document.getElementById('shieldIndicator').classList.remove('hidden');
     }
-    
+
     function activateMagnet() {
       isMagnetActive = true;
       magnetEndTime = Date.now() + GAME_CONFIG.magnetDuration;
       playSound('booster');
+      document.getElementById('magnetLabel').classList.remove('hidden');
+      document.getElementById('magnetIndicator').classList.remove('hidden');
     }
-    
+
     function updatePowerupStates() {
       const now = Date.now();
-      if(isShieldActive && now > shieldEndTime) isShieldActive = false;
-      if(isMagnetActive && now > magnetEndTime) isMagnetActive = false;
+      // Shield bar fill
+      if(isShieldActive) {
+        const timeLeft = shieldEndTime - now;
+        if(timeLeft <= 0) {
+          isShieldActive = false;
+          document.getElementById('shieldLabel').classList.add('hidden');
+          document.getElementById('shieldIndicator').classList.add('hidden');
+        } else {
+          // Percentage fill
+          const fraction = timeLeft / GAME_CONFIG.shieldDuration;
+          document.getElementById('shieldBar').style.width = (fraction * 100) + '%';
+        }
+      }
+      // Magnet bar fill
+      if(isMagnetActive) {
+        const timeLeft = magnetEndTime - now;
+        if(timeLeft <= 0) {
+          isMagnetActive = false;
+          document.getElementById('magnetLabel').classList.add('hidden');
+          document.getElementById('magnetIndicator').classList.add('hidden');
+        } else {
+          const fraction = timeLeft / GAME_CONFIG.magnetDuration;
+          document.getElementById('magnetBar').style.width = (fraction * 100) + '%';
+        }
+      }
     }
-    
+
     function checkCollision(obj1, obj2) {
       const b1 = obj1.getBounds(), b2 = obj2.getBounds();
       return !(b1.right < b2.left || b1.left > b2.right || b1.bottom < b2.top || b1.top > b2.bottom);
     }
-    
+
     function gameLoop(timestamp) {
       const deltaTime = timestamp - lastFrameTime;
-      if(deltaTime >= frameInterval) {
+      if (deltaTime >= frameInterval) {
         lastFrameTime = timestamp - (deltaTime % frameInterval);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if(gameState === 'playing') {
+        if (gameState === 'playing') {
           updateGame();
           drawGame();
+          document.getElementById('controls').classList.remove('hidden');
+        } else {
+          document.getElementById('controls').classList.add('hidden');
         }
       }
       animationFrameId = requestAnimationFrame(gameLoop);
     }
-    
+
     function updateGame() {
       score += 0.1;
       updateUI();
       updatePowerupStates();
       handlePlayerMovement();
       const currentTime = Date.now();
-      if(currentTime - lastMissileTime > GAME_CONFIG.missileSpawnRate / getDifficultyFactor()) {
+      if (currentTime - lastMissileTime > GAME_CONFIG.missileSpawnRate / getDifficultyFactor()) {
         spawnMissile();
         lastMissileTime = currentTime;
       }
-      if(currentTime - lastCoinTime > GAME_CONFIG.coinSpawnRate) {
+      if (currentTime - lastCoinTime > GAME_CONFIG.coinSpawnRate) {
         spawnCoin(false);
         lastCoinTime = currentTime;
       }
-      if(currentTime - lastNewCoinTime > GAME_CONFIG.newCoinSpawnRate) {
+      if (currentTime - lastNewCoinTime > GAME_CONFIG.newCoinSpawnRate) {
         spawnCoin(true);
         lastNewCoinTime = currentTime;
       }
-      if(currentTime - lastShieldTime > GAME_CONFIG.shieldSpawnRate) {
+      if (currentTime - lastShieldTime > GAME_CONFIG.shieldSpawnRate) {
         spawnPowerup('shield');
         lastShieldTime = currentTime;
       }
-      if(currentTime - lastMagnetTime > GAME_CONFIG.magnetSpawnRate) {
+      if (currentTime - lastMagnetTime > GAME_CONFIG.magnetSpawnRate) {
         spawnPowerup('magnet');
         lastMagnetTime = currentTime;
       }
@@ -624,16 +757,16 @@
       updateCoins();
       updatePowerups();
     }
-    
+
     function updateMissiles() {
       for(let i = missiles.length - 1; i >= 0; i--) {
         let m = missiles[i];
         m.y += m.speed;
-        if(m.y > canvas.height + m.height) {
+        if (m.y > canvas.height + m.height) {
           missiles.splice(i, 1);
           continue;
         }
-        if(checkCollision(plane, m)) {
+        if (checkCollision(plane, m)) {
           if(isShieldActive) {
             missiles.splice(i, 1);
             playSound('explosion');
@@ -644,7 +777,7 @@
         }
       }
     }
-    
+
     function updateCoins() {
       for(let i = coinsArray.length - 1; i >= 0; i--) {
         let coin = coinsArray[i];
@@ -662,11 +795,11 @@
         } else {
           coin.y += coin.speed;
         }
-        if(coin.y > canvas.height + coin.height) {
+        if (coin.y > canvas.height + coin.height) {
           coinsArray.splice(i, 1);
           continue;
         }
-        if(checkCollision(plane, coin)) {
+        if (checkCollision(plane, coin)) {
           coins += coin.value;
           coinsCollected += coin.value;
           coinsArray.splice(i, 1);
@@ -676,16 +809,16 @@
         }
       }
     }
-    
+
     function updatePowerups() {
       for(let i = powerups.length - 1; i >= 0; i--) {
         let p = powerups[i];
         p.y += p.speed;
-        if(p.y > canvas.height + p.height) {
+        if (p.y > canvas.height + p.height) {
           powerups.splice(i, 1);
           continue;
         }
-        if(checkCollision(plane, p)) {
+        if (checkCollision(plane, p)) {
           if(p.type === 'shield') activateShield();
           else if(p.type === 'magnet') activateMagnet();
           powerups.splice(i, 1);
@@ -693,7 +826,7 @@
         }
       }
     }
-    
+
     function handlePlayerMovement() {
       const speed = plane.speed;
       if(keysPressed['ArrowLeft'] || keysPressed['a']) plane.x -= speed;
@@ -707,58 +840,35 @@
         lastTouchX = touchX;
         lastTouchY = touchY;
       }
+      // Boundary check
       plane.x = Math.max(plane.width/2, Math.min(canvas.width - plane.width/2, plane.x));
       plane.y = Math.max(plane.height/2, Math.min(canvas.height - plane.height/2, plane.y));
     }
-    
+
     function drawGame() {
       plane.draw();
       missiles.forEach(m => m.draw());
       coinsArray.forEach(c => c.draw());
       powerups.forEach(p => p.draw());
-      if(isShieldActive || isMagnetActive) {
-        let y = 50;
-        if(isShieldActive) {
-          let timeLeft = (shieldEndTime - Date.now())/1000;
-          ctx.fillStyle = 'rgba(0,200,255,0.7)';
-          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft/(GAME_CONFIG.shieldDuration/1000)), 20);
-          ctx.strokeStyle = 'white';
-          ctx.strokeRect(canvas.width - 150, y, 140, 20);
-          ctx.fillStyle = 'white';
-          ctx.font = '14px Arial';
-          ctx.fillText('Shield', canvas.width - 140, y + 15);
-          y += 30;
-        }
-        if(isMagnetActive) {
-          let timeLeft = (magnetEndTime - Date.now())/1000;
-          ctx.fillStyle = 'rgba(255,100,0,0.7)';
-          ctx.fillRect(canvas.width - 150, y, 140 * (timeLeft/(GAME_CONFIG.magnetDuration/1000)), 20);
-          ctx.strokeStyle = 'white';
-          ctx.strokeRect(canvas.width - 150, y, 140, 20);
-          ctx.fillStyle = 'white';
-          ctx.font = '14px Arial';
-          ctx.fillText('Magnet', canvas.width - 140, y + 15);
-        }
-      }
     }
-    
+
     function gameOver() {
       gameState = 'gameover';
       stopBackgroundMusic();
-      playCollisionSound();
+      playOutSound();
       if(Math.floor(score) > highScore) {
         highScore = Math.floor(score);
         localStorage.setItem('highScore', highScore);
       }
       coins += coinsCollected;
       localStorage.setItem('coins', coins);
-      document.getElementById('gameUI').classList.add('hidden');
-      document.getElementById('controls').classList.add('hidden');
+      document.getElementById('topLeftPanel').classList.add('hidden');
+      document.getElementById('topRightPanel').classList.add('hidden');
       document.getElementById('finalScore').textContent = Math.floor(score);
       document.getElementById('finalCoins').textContent = coinsCollected;
       document.getElementById('gameOverMenu').classList.remove('hidden');
     }
-    
+
     function restartGame() {
       gameState = 'playing';
       score = 0;
@@ -776,11 +886,11 @@
       resetPlanePosition();
       document.getElementById('gameOverMenu').classList.add('hidden');
       document.getElementById('mainMenu').classList.add('hidden');
-      document.getElementById('gameUI').classList.remove('hidden');
-      document.getElementById('controls').classList.remove('hidden');
+      document.getElementById('topLeftPanel').classList.remove('hidden');
+      document.getElementById('topRightPanel').classList.remove('hidden');
       playBackgroundMusic();
     }
-    
+
     function pauseGame() {
       if(gameState === 'playing') {
         gameState = 'paused';
@@ -788,7 +898,7 @@
         document.getElementById('pauseMenu').classList.remove('hidden');
       }
     }
-    
+
     function resumeGame() {
       if(gameState === 'paused') {
         gameState = 'playing';
@@ -796,27 +906,27 @@
         document.getElementById('pauseMenu').classList.add('hidden');
       }
     }
-    
+
     function returnToMainMenu() {
       gameState = 'menu';
       stopBackgroundMusic();
       document.getElementById('pauseMenu').classList.add('hidden');
       document.getElementById('gameOverMenu').classList.add('hidden');
-      document.getElementById('gameUI').classList.add('hidden');
-      document.getElementById('controls').classList.add('hidden');
+      document.getElementById('topLeftPanel').classList.add('hidden');
+      document.getElementById('topRightPanel').classList.add('hidden');
       document.getElementById('mainMenu').classList.remove('hidden');
     }
-    
+
     /* =========================
-       UI & Store Functions
+       UI & STORE FUNCTIONS
        ========================= */
     function updateUI() {
-      document.getElementById('score').textContent = Math.floor(score);
-      document.getElementById('highScore').textContent = highScore;
-      document.getElementById('coins').textContent = coins;
+      document.getElementById('highScoreDisplay').textContent = highScore;
+      document.getElementById('scoreDisplay').textContent = Math.floor(score);
+      document.getElementById('coinsDisplay').textContent = coins;
       document.getElementById('storeCoins').textContent = coins;
     }
-    
+
     function populateStore() {
       const planesList = document.getElementById('planesList');
       planesList.innerHTML = '';
@@ -839,6 +949,8 @@
             selectPlane(planeInfo.id);
             populateStore();
             playSound('click');
+            document.getElementById('storeModal').classList.add('hidden');
+            returnToMainMenu();
           });
           planePrice.appendChild(selectButton);
         } else {
@@ -850,6 +962,8 @@
               buyPlane(planeInfo.id, planeInfo.price);
               populateStore();
               playSound('click');
+              document.getElementById('storeModal').classList.add('hidden');
+              returnToMainMenu();
             });
             planePrice.appendChild(buyButton);
           }
@@ -860,7 +974,7 @@
         planesList.appendChild(planeItem);
       });
     }
-    
+
     function buyPlane(planeId, price) {
       if(coins >= price && !ownedPlanes.includes(planeId)) {
         coins -= price;
@@ -871,16 +985,16 @@
         updateUI();
       }
     }
-    
+
     function selectPlane(planeId) {
       if(ownedPlanes.includes(planeId)) {
         selectedPlane = planeId;
         localStorage.setItem('selectedPlane', selectedPlane);
       }
     }
-    
+
     /* =========================
-       Input Handling
+       INPUT HANDLING
        ========================= */
     function setupKeyboardControls() {
       window.addEventListener('keydown', e => {
@@ -891,9 +1005,9 @@
         keysPressed[e.key] = false;
       });
     }
-    
+
     function setupTouchControls() {
-      // Canvas touch
+      // Touch for canvas
       canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         isTouching = true;
@@ -908,7 +1022,7 @@
         touchY = e.touches[0].clientY;
       }, { passive: false });
       canvas.addEventListener('touchend', () => { isTouching = false; });
-      // Mouse events
+      // Mouse
       canvas.addEventListener('mousedown', e => {
         isTouching = true;
         touchX = e.clientX;
@@ -940,13 +1054,15 @@
         e.preventDefault();
         keysPressed['ArrowDown'] = true;
       }, { passive: false });
+
       document.getElementById('upButton').addEventListener('touchend', () => { keysPressed['ArrowUp'] = false; });
       document.getElementById('leftButton').addEventListener('touchend', () => { keysPressed['ArrowLeft'] = false; });
       document.getElementById('rightButton').addEventListener('touchend', () => { keysPressed['ArrowRight'] = false; });
       document.getElementById('downButton').addEventListener('touchend', () => { keysPressed['ArrowDown'] = false; });
     }
-    
+
     function setupMenuListeners() {
+      // Main menu
       document.getElementById('startButton').addEventListener('click', () => {
         restartGame();
         playSound('click');
@@ -960,14 +1076,17 @@
         populateStore();
         playSound('click');
       });
+      // Settings
       document.getElementById('closeSettings').addEventListener('click', () => {
         document.getElementById('settingsModal').classList.add('hidden');
         playSound('click');
       });
+      // Store
       document.getElementById('closeStore').addEventListener('click', () => {
         document.getElementById('storeModal').classList.add('hidden');
         playSound('click');
       });
+      // Pause menu
       document.getElementById('resumeButton').addEventListener('click', () => {
         resumeGame();
         playSound('click');
@@ -980,6 +1099,7 @@
         returnToMainMenu();
         playSound('click');
       });
+      // Game Over menu
       document.getElementById('restartButton2').addEventListener('click', () => {
         restartGame();
         playSound('click');
@@ -988,22 +1108,34 @@
         returnToMainMenu();
         playSound('click');
       });
-      document.getElementById('volumeSlider').addEventListener('input', e => {
-        const vol = parseFloat(e.target.value) / 100;
-        for(let s in sounds) { sounds[s].volume = vol; }
+      // Volume
+      document.getElementById('volumeSlider').addEventListener('input', updateVolume);
+      // Settings sub-tabs
+      document.getElementById('volumeTab').addEventListener('click', () => {
+        document.getElementById('volumeTab').classList.add('active');
+        document.getElementById('aboutTab').classList.remove('active');
+        document.getElementById('volumeContent').classList.remove('hidden');
+        document.getElementById('aboutContent').classList.add('hidden');
+      });
+      document.getElementById('aboutTab').addEventListener('click', () => {
+        document.getElementById('aboutTab').classList.add('active');
+        document.getElementById('volumeTab').classList.remove('active');
+        document.getElementById('volumeContent').classList.add('hidden');
+        document.getElementById('aboutContent').classList.remove('hidden');
+      });
+      // Pause button
+      document.getElementById('pauseButton').addEventListener('click', () => {
+        pauseGame();
+        playSound('click');
       });
     }
-    
+
     function init() {
       setupKeyboardControls();
       setupTouchControls();
       setupMenuListeners();
       updateUI();
-      // Hide controls initially (will be shown once game starts)
-      document.getElementById('controls').classList.add('hidden');
-      // Set volume from slider value
-      const volume = parseFloat(document.getElementById('volumeSlider').value) / 100;
-      for(let s in sounds) { sounds[s].volume = volume; }
+      updateVolume();
       lastFrameTime = performance.now();
       animationFrameId = requestAnimationFrame(gameLoop);
     }
