@@ -13,11 +13,11 @@
       height: 100%;
       background: #000;
       color: #fff;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow: hidden;
       touch-action: none;
     }
-    /* Game Container */
+    /* Container */
     #gameContainer {
       position: relative;
       width: 100vw;
@@ -44,11 +44,23 @@
       height: 100%;
       z-index: 1;
     }
+    /* Screen Shake Effect */
+    .shake {
+      animation: shake 0.5s;
+    }
+    @keyframes shake {
+      0% { transform: translate(0px, 0px); }
+      20% { transform: translate(-10px, 5px); }
+      40% { transform: translate(10px, -5px); }
+      60% { transform: translate(-10px, 5px); }
+      80% { transform: translate(10px, -5px); }
+      100% { transform: translate(0px, 0px); }
+    }
 
     /* =========================
        TOP PANELS
        ========================= */
-    /* Left Panel: High Score, Score, Coins (stacked) */
+    /* Top Left Panel: High Score, Score, Coins (vertical stack) */
     #topLeftPanel {
       position: absolute;
       top: 10px;
@@ -60,12 +72,11 @@
     }
     #topLeftPanel div {
       font-size: 1rem;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       padding: 5px 8px;
       border-radius: 4px;
     }
-
-    /* Right Panel: Pause button, Shield bar, Magnet bar (stacked) */
+    /* Top Right Panel: Fixed Pause Button & Power-up Indicators */
     #topRightPanel {
       position: absolute;
       top: 10px;
@@ -78,15 +89,25 @@
     }
     #pauseButton {
       padding: 8px 12px;
-      background: #004080;
+      background: linear-gradient(45deg, #0066cc, #004080);
       border: none;
       border-radius: 5px;
       color: #fff;
       cursor: pointer;
       font-size: 0.9rem;
+      transition: background 0.3s, transform 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
-
-    /* Power-up bars for Shield and Magnet */
+    #pauseButton:hover {
+      background: linear-gradient(45deg, #005bb5, #003d66);
+      transform: scale(1.05);
+    }
+    /* Power-up Bars */
+    .powerup-label {
+      font-size: 0.9rem;
+      text-align: right;
+      margin-bottom: 3px;
+    }
     .powerup-bar {
       position: relative;
       width: 120px;
@@ -108,11 +129,6 @@
     #magnetBar {
       background: #ff6600;
       width: 0%;
-    }
-    .powerup-label {
-      font-size: 0.9rem;
-      margin-bottom: 3px;
-      text-align: right;
     }
 
     /* =========================
@@ -146,16 +162,18 @@
       margin: 0.5rem;
       padding: 1rem 2rem;
       font-size: 1.2rem;
-      background: #004080;
+      background: linear-gradient(45deg, #0066cc, #004080);
       color: #fff;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       min-width: 200px;
-      transition: background 0.3s;
+      transition: background 0.3s, transform 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
     .menu-overlay button:hover {
-      background: #0060a0;
+      background: linear-gradient(45deg, #005bb5, #003d66);
+      transform: scale(1.03);
     }
     /* Modal Overlays (Settings, Store) */
     .modal-overlay {
@@ -190,18 +208,18 @@
     }
     .settings-tabs button {
       padding: 8px 12px;
-      background: #004080;
+      background: linear-gradient(45deg, #0066cc, #004080);
       border: none;
       border-radius: 5px;
       color: #fff;
       cursor: pointer;
       font-size: 1rem;
+      transition: background 0.3s;
     }
     .settings-tabs button.active {
-      background: #0060a0;
+      background: linear-gradient(45deg, #005bb5, #003d66);
     }
-
-    /* Store items */
+    /* Store Items */
     .store-items {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -214,6 +232,11 @@
       border-radius: 5px;
       text-align: center;
       position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .plane-item:hover {
+      transform: scale(1.03);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
     }
     .plane-item img {
       max-width: 100%;
@@ -235,7 +258,9 @@
       font-size: 0.8rem;
     }
 
-    /* On-screen Arrows (only when playing) */
+    /* =========================
+       ON-SCREEN ARROW CONTROLS (mobile)
+       ========================= */
     .control-buttons {
       position: absolute;
       left: 50%;
@@ -260,6 +285,10 @@
       justify-content: center;
       align-items: center;
       cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .control-btn:active {
+      transform: scale(0.95);
     }
     #upButton { grid-area: up; }
     #leftButton { grid-area: left; }
@@ -273,7 +302,7 @@
     @media (max-width: 768px) {
       .menu-overlay h1 { font-size: 2rem; }
       .menu-overlay button { padding: 0.8rem 1.6rem; font-size: 1rem; min-width: 180px; }
-      .control-btn { width: 50px; height: 50px; }
+      .control-btn { width: 50px; height: 50px; font-size: 1.2rem; }
       #pauseButton { font-size: 0.8rem; }
       .powerup-label { font-size: 0.8rem; }
     }
@@ -295,15 +324,15 @@
       <div id="scoreContainer">Score: <span id="scoreDisplay">0</span></div>
       <div id="coinsContainer">Coins: <span id="coinsDisplay">0</span></div>
     </div>
-
+    
     <!-- Top Right Panel -->
     <div id="topRightPanel" class="hidden">
       <button id="pauseButton">Pause</button>
-      <div class="powerup-label hidden" id="shieldLabel">Shield</div>
+      <div id="shieldLabel" class="powerup-label hidden">Shield</div>
       <div id="shieldIndicator" class="powerup-bar hidden">
         <div id="shieldBar" class="powerup-fill"></div>
       </div>
-      <div class="powerup-label hidden" id="magnetLabel">Magnet</div>
+      <div id="magnetLabel" class="powerup-label hidden">Magnet</div>
       <div id="magnetIndicator" class="powerup-bar hidden">
         <div id="magnetBar" class="powerup-fill"></div>
       </div>
@@ -338,7 +367,7 @@
     <div id="settingsModal" class="modal-overlay hidden">
       <div class="modal-content">
         <div class="settings-tabs">
-          <button id="volumeTab" class="active">Volume Controller</button>
+          <button id="volumeTab" class="active">Volume</button>
           <button id="aboutTab">About</button>
         </div>
         <div id="volumeContent" class="setting-item">
@@ -365,13 +394,13 @@
         <h2>Store</h2>
         <div>Your Coins: <span id="storeCoins">0</span></div>
         <div id="planesList" class="store-items">
-          <!-- Dynamically populated planes -->
+          <!-- Plane items will be populated here -->
         </div>
         <button id="closeStore">Close</button>
       </div>
     </div>
     
-    <!-- On-screen Arrows (only shown while playing) -->
+    <!-- On-screen Arrows (only during gameplay) -->
     <div id="controls" class="control-buttons hidden">
       <button id="upButton" class="control-btn">⬆️</button>
       <button id="leftButton" class="control-btn">⬅️</button>
@@ -432,7 +461,6 @@
     let selectedPlane = parseInt(localStorage.getItem('selectedPlane')) || 0;
 
     function getDifficultyFactor() {
-      // Difficulty scales with score
       return 1 + score / 2000;
     }
 
@@ -474,7 +502,6 @@
     loadAsset(assets.shield, 'images/shield.png');
     loadAsset(assets.magnet, 'images/magnet.png');
 
-    // Fallback if assets load slowly
     setTimeout(() => {
       if (gameState === 'menu' && assetsLoaded < totalAssets) {
         console.warn("Fallback init: Not all assets loaded in time.");
@@ -532,10 +559,51 @@
     }
 
     function playOutSound() {
-      // Only if shield is not active
       if (!isShieldActive) {
         playSound('out');
       }
+    }
+
+    /* =========================
+       PARTICLE EFFECT FOR COINS
+       ========================= */
+    let particles = [];
+
+    function createParticles(x, y) {
+      for (let i = 0; i < 10; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          radius: Math.random() * 3 + 2,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          alpha: 1.0
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.02;
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = 'yellow';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
     }
 
     /* =========================
@@ -558,11 +626,10 @@
       draw() {
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.drawImage(assets.planes[selectedPlane], -this.width/2, -this.height/2, this.width, this.height);
-        // Draw shield circle if active
+        ctx.drawImage(assets.planes[selectedPlane], -this.width / 2, -this.height / 2, this.width, this.height);
         if (isShieldActive) {
           ctx.beginPath();
-          ctx.arc(0, 0, this.width/1.5, 0, Math.PI*2);
+          ctx.arc(0, 0, this.width / 1.5, 0, Math.PI * 2);
           ctx.strokeStyle = 'rgba(0,200,255,0.8)';
           ctx.lineWidth = 3;
           ctx.stroke();
@@ -596,19 +663,19 @@
         speed: GAME_CONFIG.missileSpeed * getDifficultyFactor(),
         getBounds() {
           return {
-            left: this.x - this.width/2,
-            right: this.x + this.width/2,
-            top: this.y - this.height/2,
-            bottom: this.y + this.height/2
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
           };
         },
         draw() {
-          ctx.drawImage(assets.missile, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+          ctx.drawImage(assets.missile, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
         }
       });
     }
 
-    function spawnCoin(isNewCoin=false) {
+    function spawnCoin(isNewCoin = false) {
       const coinSize = 30;
       const coinValue = isNewCoin ? GAME_CONFIG.newCoinValue : GAME_CONFIG.coinValue;
       const coinImage = isNewCoin ? assets.newCoin : assets.coin;
@@ -624,14 +691,14 @@
         image: coinImage,
         getBounds() {
           return {
-            left: this.x - this.width/2,
-            right: this.x + this.width/2,
-            top: this.y - this.height/2,
-            bottom: this.y + this.height/2
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
           };
         },
         draw() {
-          ctx.drawImage(this.image, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
         }
       });
     }
@@ -649,14 +716,14 @@
         image: powerupImage,
         getBounds() {
           return {
-            left: this.x - this.width/2,
-            right: this.x + this.width/2,
-            top: this.y - this.height/2,
-            bottom: this.y + this.height/2
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
           };
         },
         draw() {
-          ctx.drawImage(this.image, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
         }
       });
     }
@@ -679,23 +746,20 @@
 
     function updatePowerupStates() {
       const now = Date.now();
-      // Shield bar fill
-      if(isShieldActive) {
+      if (isShieldActive) {
         const timeLeft = shieldEndTime - now;
-        if(timeLeft <= 0) {
+        if (timeLeft <= 0) {
           isShieldActive = false;
           document.getElementById('shieldLabel').classList.add('hidden');
           document.getElementById('shieldIndicator').classList.add('hidden');
         } else {
-          // Percentage fill
           const fraction = timeLeft / GAME_CONFIG.shieldDuration;
           document.getElementById('shieldBar').style.width = (fraction * 100) + '%';
         }
       }
-      // Magnet bar fill
-      if(isMagnetActive) {
+      if (isMagnetActive) {
         const timeLeft = magnetEndTime - now;
-        if(timeLeft <= 0) {
+        if (timeLeft <= 0) {
           isMagnetActive = false;
           document.getElementById('magnetLabel').classList.add('hidden');
           document.getElementById('magnetIndicator').classList.add('hidden');
@@ -719,6 +783,8 @@
         if (gameState === 'playing') {
           updateGame();
           drawGame();
+          updateParticles();
+          drawParticles();
           document.getElementById('controls').classList.remove('hidden');
         } else {
           document.getElementById('controls').classList.add('hidden');
@@ -759,7 +825,7 @@
     }
 
     function updateMissiles() {
-      for(let i = missiles.length - 1; i >= 0; i--) {
+      for (let i = missiles.length - 1; i >= 0; i--) {
         let m = missiles[i];
         m.y += m.speed;
         if (m.y > canvas.height + m.height) {
@@ -767,10 +833,15 @@
           continue;
         }
         if (checkCollision(plane, m)) {
-          if(isShieldActive) {
+          if (isShieldActive) {
             missiles.splice(i, 1);
             playSound('explosion');
           } else {
+            // Add screen shake effect on collision
+            document.getElementById('gameContainer').classList.add('shake');
+            setTimeout(() => {
+              document.getElementById('gameContainer').classList.remove('shake');
+            }, 500);
             gameOver();
             return;
           }
@@ -779,13 +850,13 @@
     }
 
     function updateCoins() {
-      for(let i = coinsArray.length - 1; i >= 0; i--) {
+      for (let i = coinsArray.length - 1; i >= 0; i--) {
         let coin = coinsArray[i];
-        if(isMagnetActive) {
+        if (isMagnetActive) {
           let dx = plane.x - coin.x, dy = plane.y - coin.y;
-          let distance = Math.sqrt(dx*dx + dy*dy);
-          if(distance < GAME_CONFIG.magnetAttractionRadius) coin.isAttracted = true;
-          if(coin.isAttracted) {
+          let distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < GAME_CONFIG.magnetAttractionRadius) coin.isAttracted = true;
+          if (coin.isAttracted) {
             let angle = Math.atan2(dy, dx);
             coin.x += Math.cos(angle) * GAME_CONFIG.magnetAttractionSpeed;
             coin.y += Math.sin(angle) * GAME_CONFIG.magnetAttractionSpeed;
@@ -804,6 +875,7 @@
           coinsCollected += coin.value;
           coinsArray.splice(i, 1);
           playSound('coin');
+          createParticles(coin.x, coin.y);
           updateUI();
           continue;
         }
@@ -811,7 +883,7 @@
     }
 
     function updatePowerups() {
-      for(let i = powerups.length - 1; i >= 0; i--) {
+      for (let i = powerups.length - 1; i >= 0; i--) {
         let p = powerups[i];
         p.y += p.speed;
         if (p.y > canvas.height + p.height) {
@@ -819,8 +891,8 @@
           continue;
         }
         if (checkCollision(plane, p)) {
-          if(p.type === 'shield') activateShield();
-          else if(p.type === 'magnet') activateMagnet();
+          if (p.type === 'shield') activateShield();
+          else if (p.type === 'magnet') activateMagnet();
           powerups.splice(i, 1);
           continue;
         }
@@ -829,20 +901,19 @@
 
     function handlePlayerMovement() {
       const speed = plane.speed;
-      if(keysPressed['ArrowLeft'] || keysPressed['a']) plane.x -= speed;
-      if(keysPressed['ArrowRight'] || keysPressed['d']) plane.x += speed;
-      if(keysPressed['ArrowUp'] || keysPressed['w']) plane.y -= speed;
-      if(keysPressed['ArrowDown'] || keysPressed['s']) plane.y += speed;
-      if(isTouching) {
+      if (keysPressed['ArrowLeft'] || keysPressed['a']) plane.x -= speed;
+      if (keysPressed['ArrowRight'] || keysPressed['d']) plane.x += speed;
+      if (keysPressed['ArrowUp'] || keysPressed['w']) plane.y -= speed;
+      if (keysPressed['ArrowDown'] || keysPressed['s']) plane.y += speed;
+      if (isTouching) {
         let dx = touchX - lastTouchX, dy = touchY - lastTouchY;
-        if(Math.abs(dx) > 1) plane.x += dx / 2;
-        if(Math.abs(dy) > 1) plane.y += dy / 2;
+        if (Math.abs(dx) > 1) plane.x += dx / 2;
+        if (Math.abs(dy) > 1) plane.y += dy / 2;
         lastTouchX = touchX;
         lastTouchY = touchY;
       }
-      // Boundary check
-      plane.x = Math.max(plane.width/2, Math.min(canvas.width - plane.width/2, plane.x));
-      plane.y = Math.max(plane.height/2, Math.min(canvas.height - plane.height/2, plane.y));
+      plane.x = Math.max(plane.width / 2, Math.min(canvas.width - plane.width / 2, plane.x));
+      plane.y = Math.max(plane.height / 2, Math.min(canvas.height - plane.height / 2, plane.y));
     }
 
     function drawGame() {
@@ -856,7 +927,7 @@
       gameState = 'gameover';
       stopBackgroundMusic();
       playOutSound();
-      if(Math.floor(score) > highScore) {
+      if (Math.floor(score) > highScore) {
         highScore = Math.floor(score);
         localStorage.setItem('highScore', highScore);
       }
@@ -876,6 +947,7 @@
       missiles = [];
       coinsArray = [];
       powerups = [];
+      particles = [];
       lastMissileTime = Date.now();
       lastCoinTime = Date.now();
       lastNewCoinTime = Date.now();
@@ -892,7 +964,7 @@
     }
 
     function pauseGame() {
-      if(gameState === 'playing') {
+      if (gameState === 'playing') {
         gameState = 'paused';
         pauseBackgroundMusic();
         document.getElementById('pauseMenu').classList.remove('hidden');
@@ -900,7 +972,7 @@
     }
 
     function resumeGame() {
-      if(gameState === 'paused') {
+      if (gameState === 'paused') {
         gameState = 'playing';
         playBackgroundMusic();
         document.getElementById('pauseMenu').classList.add('hidden');
@@ -933,15 +1005,15 @@
       GAME_CONFIG.planeImages.forEach(planeInfo => {
         const planeItem = document.createElement('div');
         planeItem.className = 'plane-item';
-        if(ownedPlanes.includes(planeInfo.id)) planeItem.classList.add('owned');
-        if(selectedPlane === planeInfo.id) planeItem.classList.add('selected');
+        if (ownedPlanes.includes(planeInfo.id)) planeItem.classList.add('owned');
+        if (selectedPlane === planeInfo.id) planeItem.classList.add('selected');
         const planeImage = document.createElement('img');
         planeImage.src = planeInfo.src;
         planeImage.alt = planeInfo.name;
         const planeName = document.createElement('h3');
         planeName.textContent = planeInfo.name;
         const planePrice = document.createElement('div');
-        if(ownedPlanes.includes(planeInfo.id)) {
+        if (ownedPlanes.includes(planeInfo.id)) {
           const selectButton = document.createElement('button');
           selectButton.textContent = selectedPlane === planeInfo.id ? 'Selected' : 'Select';
           selectButton.disabled = selectedPlane === planeInfo.id;
@@ -955,7 +1027,7 @@
           planePrice.appendChild(selectButton);
         } else {
           planePrice.textContent = `${planeInfo.price} coins`;
-          if(coins >= planeInfo.price) {
+          if (coins >= planeInfo.price) {
             const buyButton = document.createElement('button');
             buyButton.textContent = 'Buy';
             buyButton.addEventListener('click', () => {
@@ -976,7 +1048,8 @@
     }
 
     function buyPlane(planeId, price) {
-      if(coins >= price && !ownedPlanes.includes(planeId)) {
+      if (coins >= planeId.price && !ownedPlanes.includes(planeId)) { } // dummy, not used
+      if (coins >= price && !ownedPlanes.includes(planeId)) {
         coins -= price;
         ownedPlanes.push(planeId);
         selectPlane(planeId);
@@ -987,7 +1060,7 @@
     }
 
     function selectPlane(planeId) {
-      if(ownedPlanes.includes(planeId)) {
+      if (ownedPlanes.includes(planeId)) {
         selectedPlane = planeId;
         localStorage.setItem('selectedPlane', selectedPlane);
       }
@@ -999,7 +1072,7 @@
     function setupKeyboardControls() {
       window.addEventListener('keydown', e => {
         keysPressed[e.key] = true;
-        if(e.key === 'Escape' && gameState === 'playing') pauseGame();
+        if (e.key === 'Escape' && gameState === 'playing') pauseGame();
       });
       window.addEventListener('keyup', e => {
         keysPressed[e.key] = false;
@@ -1007,7 +1080,6 @@
     }
 
     function setupTouchControls() {
-      // Touch for canvas
       canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         isTouching = true;
@@ -1022,7 +1094,6 @@
         touchY = e.touches[0].clientY;
       }, { passive: false });
       canvas.addEventListener('touchend', () => { isTouching = false; });
-      // Mouse
       canvas.addEventListener('mousedown', e => {
         isTouching = true;
         touchX = e.clientX;
@@ -1031,13 +1102,12 @@
         lastTouchY = touchY;
       });
       canvas.addEventListener('mousemove', e => {
-        if(isTouching) {
+        if (isTouching) {
           touchX = e.clientX;
           touchY = e.clientY;
         }
       });
       window.addEventListener('mouseup', () => { isTouching = false; });
-      // On-screen arrow buttons
       document.getElementById('upButton').addEventListener('touchstart', e => {
         e.preventDefault();
         keysPressed['ArrowUp'] = true;
@@ -1054,7 +1124,6 @@
         e.preventDefault();
         keysPressed['ArrowDown'] = true;
       }, { passive: false });
-
       document.getElementById('upButton').addEventListener('touchend', () => { keysPressed['ArrowUp'] = false; });
       document.getElementById('leftButton').addEventListener('touchend', () => { keysPressed['ArrowLeft'] = false; });
       document.getElementById('rightButton').addEventListener('touchend', () => { keysPressed['ArrowRight'] = false; });
@@ -1062,7 +1131,6 @@
     }
 
     function setupMenuListeners() {
-      // Main menu
       document.getElementById('startButton').addEventListener('click', () => {
         restartGame();
         playSound('click');
@@ -1076,17 +1144,14 @@
         populateStore();
         playSound('click');
       });
-      // Settings
       document.getElementById('closeSettings').addEventListener('click', () => {
         document.getElementById('settingsModal').classList.add('hidden');
         playSound('click');
       });
-      // Store
       document.getElementById('closeStore').addEventListener('click', () => {
         document.getElementById('storeModal').classList.add('hidden');
         playSound('click');
       });
-      // Pause menu
       document.getElementById('resumeButton').addEventListener('click', () => {
         resumeGame();
         playSound('click');
@@ -1099,7 +1164,6 @@
         returnToMainMenu();
         playSound('click');
       });
-      // Game Over menu
       document.getElementById('restartButton2').addEventListener('click', () => {
         restartGame();
         playSound('click');
@@ -1108,9 +1172,7 @@
         returnToMainMenu();
         playSound('click');
       });
-      // Volume
       document.getElementById('volumeSlider').addEventListener('input', updateVolume);
-      // Settings sub-tabs
       document.getElementById('volumeTab').addEventListener('click', () => {
         document.getElementById('volumeTab').classList.add('active');
         document.getElementById('aboutTab').classList.remove('active');
@@ -1120,10 +1182,9 @@
       document.getElementById('aboutTab').addEventListener('click', () => {
         document.getElementById('aboutTab').classList.add('active');
         document.getElementById('volumeTab').classList.remove('active');
-        document.getElementById('volumeContent').classList.add('hidden');
         document.getElementById('aboutContent').classList.remove('hidden');
+        document.getElementById('volumeContent').classList.add('hidden');
       });
-      // Pause button
       document.getElementById('pauseButton').addEventListener('click', () => {
         pauseGame();
         playSound('click');
