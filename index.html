@@ -17,7 +17,7 @@
       overflow: hidden;
       touch-action: none;
     }
-    /* Container */
+    /* Game Container */
     #gameContainer {
       position: relative;
       width: 100vw;
@@ -44,23 +44,26 @@
       height: 100%;
       z-index: 1;
     }
-    /* Screen Shake Effect */
+
+    /* =========================
+       SCREEN SHAKE
+       ========================= */
     .shake {
       animation: shake 0.5s;
     }
     @keyframes shake {
-      0% { transform: translate(0px, 0px); }
+      0% { transform: translate(0, 0); }
       20% { transform: translate(-10px, 5px); }
       40% { transform: translate(10px, -5px); }
       60% { transform: translate(-10px, 5px); }
       80% { transform: translate(10px, -5px); }
-      100% { transform: translate(0px, 0px); }
+      100% { transform: translate(0, 0); }
     }
 
     /* =========================
        TOP PANELS
        ========================= */
-    /* Top Left Panel: High Score, Score, Coins (vertical stack) */
+    /* Top Left Panel: High Score, Score, Coins */
     #topLeftPanel {
       position: absolute;
       top: 10px;
@@ -76,7 +79,7 @@
       padding: 5px 8px;
       border-radius: 4px;
     }
-    /* Top Right Panel: Fixed Pause Button & Power-up Indicators */
+    /* Top Right Panel: Pause & Power-ups */
     #topRightPanel {
       position: absolute;
       top: 10px;
@@ -175,7 +178,7 @@
       background: linear-gradient(45deg, #005bb5, #003d66);
       transform: scale(1.03);
     }
-    /* Modal Overlays (Settings, Store) */
+    /* Modal Overlays (Settings, Store, Buy Missiles) */
     .modal-overlay {
       position: absolute;
       top: 0;
@@ -195,6 +198,7 @@
       max-width: 80%;
       max-height: 80%;
       overflow-y: auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
     .setting-item {
       margin: 1rem 0;
@@ -214,10 +218,13 @@
       color: #fff;
       cursor: pointer;
       font-size: 1rem;
-      transition: background 0.3s;
+      transition: background 0.3s, transform 0.2s;
     }
     .settings-tabs button.active {
       background: linear-gradient(45deg, #005bb5, #003d66);
+    }
+    .settings-tabs button:hover {
+      transform: scale(1.02);
     }
     /* Store Items */
     .store-items {
@@ -259,6 +266,62 @@
     }
 
     /* =========================
+       MISSILE BUY MODAL
+       ========================= */
+    #buyMissilesModal .modal-content {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #missileCountContainer {
+      margin: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+    }
+    #missileCountContainer button {
+      background: linear-gradient(45deg, #0066cc, #004080);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: transform 0.2s;
+    }
+    #missileCountContainer button:hover {
+      transform: scale(1.05);
+    }
+    #missileCount {
+      width: 40px;
+      text-align: center;
+      font-size: 1.2rem;
+    }
+    #totalCost {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+    }
+    #closeBuyMissile, #confirmBuyMissile {
+      margin: 0.5rem;
+      padding: 0.8rem 2rem;
+      font-size: 1.1rem;
+      background: linear-gradient(45deg, #0066cc, #004080);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    #closeBuyMissile:hover, #confirmBuyMissile:hover {
+      background: linear-gradient(45deg, #005bb5, #003d66);
+      transform: scale(1.04);
+    }
+
+    /* =========================
        ON-SCREEN ARROW CONTROLS (mobile)
        ========================= */
     .control-buttons {
@@ -295,7 +358,7 @@
     #rightButton { grid-area: right; }
     #downButton { grid-area: down; }
 
-    /* Utility */
+    /* Utility Classes */
     .hidden {
       display: none !important;
     }
@@ -337,13 +400,32 @@
         <div id="magnetBar" class="powerup-fill"></div>
       </div>
     </div>
-    
+
     <!-- Main Menu -->
     <div id="mainMenu" class="menu-overlay">
       <h1>Aero Defender</h1>
       <button id="startButton">Start Game</button>
+      <button id="buyMissileButton">Buy Missiles 🔥</button>
       <button id="storeButton">Store</button>
       <button id="settingsButton">Settings</button>
+    </div>
+    
+    <!-- Buy Missiles Modal -->
+    <div id="buyMissilesModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h2>Buy Missiles 🔥</h2>
+        <div style="margin-bottom: 1rem; font-size: 1.1rem;">
+          You currently have <span id="availableMissilesInModal">0</span> missiles.
+        </div>
+        <div id="missileCountContainer">
+          <button id="minusMissile">-</button>
+          <span id="missileCount">1</span>
+          <button id="plusMissile">+</button>
+        </div>
+        <div id="totalCost">20 Coins</div>
+        <button id="closeBuyMissile">Close</button>
+        <button id="confirmBuyMissile">Buy</button>
+      </div>
     </div>
     
     <!-- Pause Menu -->
@@ -394,7 +476,7 @@
         <h2>Store</h2>
         <div>Your Coins: <span id="storeCoins">0</span></div>
         <div id="planesList" class="store-items">
-          <!-- Plane items will be populated here -->
+          <!-- Dynamically populated planes -->
         </div>
         <button id="closeStore">Close</button>
       </div>
@@ -433,7 +515,8 @@
         { id: 1, src: 'images/plane2.png', price: 100, name: 'Advanced Plane' },
         { id: 2, src: 'images/plane3.png', price: 250, name: 'Stealth Plane' },
         { id: 3, src: 'images/plane4.png', price: 500, name: 'Space Plane' }
-      ]
+      ],
+      missileCost: 20  // cost per missile (updated)
     };
 
     /* =========================
@@ -459,6 +542,12 @@
     // Owned planes and selection
     let ownedPlanes = JSON.parse(localStorage.getItem('ownedPlanes')) || [0];
     let selectedPlane = parseInt(localStorage.getItem('selectedPlane')) || 0;
+
+    // Player Missiles
+    let playerMissiles = parseInt(localStorage.getItem('playerMissiles')) || 0;
+
+    // Fire logic
+    let firedProjectiles = [];
 
     function getDifficultyFactor() {
       return 1 + score / 2000;
@@ -502,6 +591,7 @@
     loadAsset(assets.shield, 'images/shield.png');
     loadAsset(assets.magnet, 'images/magnet.png');
 
+    // Fallback if assets load slowly
     setTimeout(() => {
       if (gameState === 'menu' && assetsLoaded < totalAssets) {
         console.warn("Fallback init: Not all assets loaded in time.");
@@ -509,7 +599,7 @@
       }
     }, 5000);
 
-    // Sounds
+    // Sounds (include distroy.mp3 for missile collisions)
     const sounds = {
       move: new Audio('sounds/move.mp3'),
       booster: new Audio('sounds/booster.mp3'),
@@ -519,7 +609,9 @@
       shield: new Audio('sounds/shieldcollected.mp3'),
       collision: new Audio('sounds/collision.mp3'),
       out: new Audio('sounds/out.mp3'),
-      background: new Audio('sounds/background.mp3')
+      background: new Audio('sounds/background.mp3'),
+      buy: new Audio('sounds/buy.mp3'),
+      distroy: new Audio('sounds/distroy.mp3')  // new destroy effect
     };
 
     function updateVolume() {
@@ -565,10 +657,12 @@
     }
 
     /* =========================
-       PARTICLE EFFECT FOR COINS
+       PARTICLE EFFECTS
        ========================= */
     let particles = [];
+    let explosionParticles = [];
 
+    // Coin sparkle
     function createParticles(x, y) {
       for (let i = 0; i < 10; i++) {
         particles.push({
@@ -581,8 +675,22 @@
         });
       }
     }
+    // Explosion effect for missile collisions
+    function createExplosion(x, y) {
+      for (let i = 0; i < 15; i++) {
+        explosionParticles.push({
+          x: x,
+          y: y,
+          radius: Math.random() * 4 + 3,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          alpha: 1.0
+        });
+      }
+    }
 
     function updateParticles() {
+      // Coin sparkles
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
@@ -592,15 +700,36 @@
           particles.splice(i, 1);
         }
       }
+      // Explosion sparkles
+      for (let i = explosionParticles.length - 1; i >= 0; i--) {
+        const e = explosionParticles[i];
+        e.x += e.vx;
+        e.y += e.vy;
+        e.alpha -= 0.03;
+        if (e.alpha <= 0) {
+          explosionParticles.splice(i, 1);
+        }
+      }
     }
 
     function drawParticles() {
+      // Coin sparkles
       particles.forEach(p => {
         ctx.save();
         ctx.globalAlpha = p.alpha;
         ctx.fillStyle = 'yellow';
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+      // Explosion sparkles
+      explosionParticles.forEach(e => {
+        ctx.save();
+        ctx.globalAlpha = e.alpha;
+        ctx.fillStyle = 'orange';
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       });
@@ -640,6 +769,67 @@
       }
     };
 
+    /* =========================
+       FIRED PROJECTILES LOGIC
+       ========================= */
+    function fireProjectile() {
+      if (playerMissiles > 0) {
+        playerMissiles--;
+        localStorage.setItem('playerMissiles', playerMissiles);
+        updateMissileCountInModal();
+        // Create projectile
+        firedProjectiles.push({
+          x: plane.x,
+          y: plane.y - plane.height/2,
+          width: 15,
+          height: 30,
+          speed: 8,
+          getBounds() {
+            return {
+              left: this.x - this.width/2,
+              right: this.x + this.width/2,
+              top: this.y - this.height/2,
+              bottom: this.y + this.height/2
+            };
+          }
+        });
+      }
+    }
+
+    function updateFiredProjectiles() {
+      for (let i = firedProjectiles.length - 1; i >= 0; i--) {
+        let proj = firedProjectiles[i];
+        proj.y -= proj.speed;
+        if (proj.y < -proj.height) {
+          firedProjectiles.splice(i, 1);
+          continue;
+        }
+        // Check collisions with incoming missiles
+        for (let j = missiles.length - 1; j >= 0; j--) {
+          let m = missiles[j];
+          if (checkCollision(proj, m)) {
+            // Both are destroyed
+            firedProjectiles.splice(i, 1);
+            missiles.splice(j, 1);
+            createExplosion(proj.x, proj.y);
+            // Play new "distroy" sound
+            playSound('distroy');
+            break;
+          }
+        }
+      }
+    }
+
+    function drawFiredProjectiles() {
+      ctx.save();
+      ctx.fillStyle = 'red';
+      firedProjectiles.forEach(proj => {
+        ctx.fillRect(proj.x - proj.width/2, proj.y - proj.height/2, proj.width, proj.height);
+      });
+      ctx.restore();
+    }
+
+    // Arrays for enemy missiles, coins, powerups
     let missiles = [], coinsArray = [], powerups = [];
     let isShieldActive = false, isMagnetActive = false;
     let shieldEndTime = 0, magnetEndTime = 0;
@@ -653,6 +843,7 @@
       plane.y = canvas.height * 0.7;
     }
 
+    // Spawn enemy missile
     function spawnMissile() {
       const missileWidth = 30, missileHeight = 60;
       missiles.push({
@@ -691,14 +882,14 @@
         image: coinImage,
         getBounds() {
           return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
+            left: this.x - this.width/2,
+            right: this.x + this.width/2,
+            top: this.y - this.height/2,
+            bottom: this.y + this.height/2
           };
         },
         draw() {
-          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+          ctx.drawImage(this.image, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
         }
       });
     }
@@ -785,6 +976,8 @@
           drawGame();
           updateParticles();
           drawParticles();
+          updateFiredProjectiles();
+          drawFiredProjectiles();
           document.getElementById('controls').classList.remove('hidden');
         } else {
           document.getElementById('controls').classList.add('hidden');
@@ -798,6 +991,7 @@
       updateUI();
       updatePowerupStates();
       handlePlayerMovement();
+
       const currentTime = Date.now();
       if (currentTime - lastMissileTime > GAME_CONFIG.missileSpawnRate / getDifficultyFactor()) {
         spawnMissile();
@@ -819,6 +1013,8 @@
         spawnPowerup('magnet');
         lastMagnetTime = currentTime;
       }
+
+      // Update enemy missiles, coins, powerups
       updateMissiles();
       updateCoins();
       updatePowerups();
@@ -832,12 +1028,12 @@
           missiles.splice(i, 1);
           continue;
         }
+        // Collision with player's plane
         if (checkCollision(plane, m)) {
           if (isShieldActive) {
             missiles.splice(i, 1);
             playSound('explosion');
           } else {
-            // Add screen shake effect on collision
             document.getElementById('gameContainer').classList.add('shake');
             setTimeout(() => {
               document.getElementById('gameContainer').classList.remove('shake');
@@ -905,13 +1101,6 @@
       if (keysPressed['ArrowRight'] || keysPressed['d']) plane.x += speed;
       if (keysPressed['ArrowUp'] || keysPressed['w']) plane.y -= speed;
       if (keysPressed['ArrowDown'] || keysPressed['s']) plane.y += speed;
-      if (isTouching) {
-        let dx = touchX - lastTouchX, dy = touchY - lastTouchY;
-        if (Math.abs(dx) > 1) plane.x += dx / 2;
-        if (Math.abs(dy) > 1) plane.y += dy / 2;
-        lastTouchX = touchX;
-        lastTouchY = touchY;
-      }
       plane.x = Math.max(plane.width / 2, Math.min(canvas.width - plane.width / 2, plane.x));
       plane.y = Math.max(plane.height / 2, Math.min(canvas.height - plane.height / 2, plane.y));
     }
@@ -948,6 +1137,8 @@
       coinsArray = [];
       powerups = [];
       particles = [];
+      explosionParticles = [];
+      firedProjectiles = [];
       lastMissileTime = Date.now();
       lastCoinTime = Date.now();
       lastNewCoinTime = Date.now();
@@ -960,6 +1151,7 @@
       document.getElementById('mainMenu').classList.add('hidden');
       document.getElementById('topLeftPanel').classList.remove('hidden');
       document.getElementById('topRightPanel').classList.remove('hidden');
+      updateMissileCountInModal();
       playBackgroundMusic();
     }
 
@@ -987,6 +1179,7 @@
       document.getElementById('topLeftPanel').classList.add('hidden');
       document.getElementById('topRightPanel').classList.add('hidden');
       document.getElementById('mainMenu').classList.remove('hidden');
+      updateMissileCountInModal();
     }
 
     /* =========================
@@ -1033,7 +1226,7 @@
             buyButton.addEventListener('click', () => {
               buyPlane(planeInfo.id, planeInfo.price);
               populateStore();
-              playSound('click');
+              playSound('buy');
               document.getElementById('storeModal').classList.add('hidden');
               returnToMainMenu();
             });
@@ -1048,7 +1241,6 @@
     }
 
     function buyPlane(planeId, price) {
-      if (coins >= planeId.price && !ownedPlanes.includes(planeId)) { } // dummy, not used
       if (coins >= price && !ownedPlanes.includes(planeId)) {
         coins -= price;
         ownedPlanes.push(planeId);
@@ -1067,12 +1259,41 @@
     }
 
     /* =========================
+       MISSILE BUY LOGIC
+       ========================= */
+    let missileBuyCount = 1;
+    function updateMissileBuyUI() {
+      document.getElementById('missileCount').textContent = missileBuyCount;
+      document.getElementById('totalCost').textContent = (missileBuyCount * GAME_CONFIG.missileCost) + ' Coins';
+    }
+    function updateMissileCountInModal() {
+      document.getElementById('availableMissilesInModal').textContent = playerMissiles;
+    }
+
+    function buyMissiles() {
+      const totalPrice = missileBuyCount * GAME_CONFIG.missileCost;
+      if (coins >= totalPrice) {
+        coins -= totalPrice;
+        playerMissiles += missileBuyCount;
+        localStorage.setItem('coins', coins);
+        localStorage.setItem('playerMissiles', playerMissiles);
+        updateUI();
+        updateMissileCountInModal();
+        playSound('buy');
+      }
+    }
+
+    /* =========================
        INPUT HANDLING
        ========================= */
     function setupKeyboardControls() {
       window.addEventListener('keydown', e => {
         keysPressed[e.key] = true;
         if (e.key === 'Escape' && gameState === 'playing') pauseGame();
+        // Space or Enter to fire
+        if ((e.key === ' ' || e.key === 'Enter') && gameState === 'playing') {
+          fireProjectile();
+        }
       });
       window.addEventListener('keyup', e => {
         keysPressed[e.key] = false;
@@ -1080,6 +1301,20 @@
     }
 
     function setupTouchControls() {
+      // Tap plane to fire
+      canvas.addEventListener('mousedown', e => {
+        if (gameState === 'playing') {
+          // Check if click is inside plane bounding box
+          const rect = canvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          const { left, right, top, bottom } = plane.getBounds();
+          if (mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom) {
+            fireProjectile();
+          }
+        }
+      });
+      // Basic movement touch
       canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         isTouching = true;
@@ -1094,20 +1329,7 @@
         touchY = e.touches[0].clientY;
       }, { passive: false });
       canvas.addEventListener('touchend', () => { isTouching = false; });
-      canvas.addEventListener('mousedown', e => {
-        isTouching = true;
-        touchX = e.clientX;
-        touchY = e.clientY;
-        lastTouchX = touchX;
-        lastTouchY = touchY;
-      });
-      canvas.addEventListener('mousemove', e => {
-        if (isTouching) {
-          touchX = e.clientX;
-          touchY = e.clientY;
-        }
-      });
-      window.addEventListener('mouseup', () => { isTouching = false; });
+      // On-screen arrow controls
       document.getElementById('upButton').addEventListener('touchstart', e => {
         e.preventDefault();
         keysPressed['ArrowUp'] = true;
@@ -1135,6 +1357,35 @@
         restartGame();
         playSound('click');
       });
+      // Buy Missiles 🔥 button
+      document.getElementById('buyMissileButton').addEventListener('click', () => {
+        missileBuyCount = 1;
+        updateMissileBuyUI();
+        updateMissileCountInModal();
+        document.getElementById('buyMissilesModal').classList.remove('hidden');
+        playSound('click');
+      });
+      // Missiles modal
+      document.getElementById('minusMissile').addEventListener('click', () => {
+        if (missileBuyCount > 1) {
+          missileBuyCount--;
+          updateMissileBuyUI();
+        }
+      });
+      document.getElementById('plusMissile').addEventListener('click', () => {
+        missileBuyCount++;
+        updateMissileBuyUI();
+      });
+      document.getElementById('closeBuyMissile').addEventListener('click', () => {
+        document.getElementById('buyMissilesModal').classList.add('hidden');
+        playSound('click');
+      });
+      document.getElementById('confirmBuyMissile').addEventListener('click', () => {
+        buyMissiles();
+        document.getElementById('buyMissilesModal').classList.add('hidden');
+        returnToMainMenu();
+      });
+
       document.getElementById('settingsButton').addEventListener('click', () => {
         document.getElementById('settingsModal').classList.remove('hidden');
         playSound('click');
@@ -1197,6 +1448,8 @@
       setupMenuListeners();
       updateUI();
       updateVolume();
+      updateMissileBuyUI();
+      updateMissileCountInModal();
       lastFrameTime = performance.now();
       animationFrameId = requestAnimationFrame(gameLoop);
     }
