@@ -1,1458 +1,1311 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Aero Defender</title>
-  <style>
-    /* Basic Resets */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      color: #fff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      overflow: hidden;
-      touch-action: none;
-    }
-    /* Game Container */
-    #gameContainer {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      overflow: hidden;
-    }
-    /* Background Video */
-    #bgVideo {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 0;
-    }
-    /* Main Canvas */
-    #gameCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <title>Aero Defender</title>
+    <style>
+        /* Basic Resets */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
 
-    /* =========================
-       SCREEN SHAKE
-       ========================= */
-    .shake {
-      animation: shake 0.5s;
-    }
-    @keyframes shake {
-      0% { transform: translate(0, 0); }
-      20% { transform: translate(-10px, 5px); }
-      40% { transform: translate(10px, -5px); }
-      60% { transform: translate(-10px, 5px); }
-      80% { transform: translate(10px, -5px); }
-      100% { transform: translate(0, 0); }
-    }
+        /* Game Container */
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            overflow: hidden;
+        }
 
-    /* =========================
-       TOP PANELS
-       ========================= */
-    /* Top Left Panel: High Score, Score, Coins */
-    #topLeftPanel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      z-index: 20;
-    }
-    #topLeftPanel div {
-      font-size: 1rem;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 5px 8px;
-      border-radius: 4px;
-    }
-    /* Top Right Panel: Pause & Power-ups */
-    #topRightPanel {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 10px;
-      z-index: 20;
-    }
-    #pauseButton {
-      padding: 8px 12px;
-      background: linear-gradient(45deg, #0066cc, #004080);
-      border: none;
-      border-radius: 5px;
-      color: #fff;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.3s, transform 0.2s;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    }
-    #pauseButton:hover {
-      background: linear-gradient(45deg, #005bb5, #003d66);
-      transform: scale(1.05);
-    }
-    /* Power-up Bars */
-    .powerup-label {
-      font-size: 0.9rem;
-      text-align: right;
-      margin-bottom: 3px;
-    }
-    .powerup-bar {
-      position: relative;
-      width: 120px;
-      height: 20px;
-      background: #333;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .powerup-fill {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-    }
-    #shieldBar {
-      background: #00aaff;
-      width: 0%;
-    }
-    #magnetBar {
-      background: #ff6600;
-      width: 0%;
-    }
+        /* Background Video */
+        #bgVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
 
-    /* =========================
-       MENUS & MODALS
-       ========================= */
-    .menu-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 30;
-    }
-    .menu-overlay h1 {
-      font-size: 3rem;
-      margin-bottom: 2rem;
-      color: #fff;
-      text-shadow: 0 0 10px #00f;
-    }
-    .menu-overlay h2 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      color: #fff;
-    }
-    .menu-overlay button {
-      margin: 0.5rem;
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      background: linear-gradient(45deg, #0066cc, #004080);
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      min-width: 200px;
-      transition: background 0.3s, transform 0.2s;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    }
-    .menu-overlay button:hover {
-      background: linear-gradient(45deg, #005bb5, #003d66);
-      transform: scale(1.03);
-    }
-    /* Modal Overlays (Settings, Store, Buy Missiles) */
-    .modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 40;
-    }
-    .modal-content {
-      background: #333;
-      padding: 2rem;
-      border-radius: 10px;
-      max-width: 80%;
-      max-height: 80%;
-      overflow-y: auto;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    }
-    .setting-item {
-      margin: 1rem 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .settings-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 1rem;
-    }
-    .settings-tabs button {
-      padding: 8px 12px;
-      background: linear-gradient(45deg, #0066cc, #004080);
-      border: none;
-      border-radius: 5px;
-      color: #fff;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.3s, transform 0.2s;
-    }
-    .settings-tabs button.active {
-      background: linear-gradient(45deg, #005bb5, #003d66);
-    }
-    .settings-tabs button:hover {
-      transform: scale(1.02);
-    }
-    /* Store Items */
-    .store-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
-      margin: 1rem 0;
-    }
-    .plane-item {
-      padding: 1rem;
-      background: #444;
-      border-radius: 5px;
-      text-align: center;
-      position: relative;
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-    .plane-item:hover {
-      transform: scale(1.03);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-    }
-    .plane-item img {
-      max-width: 100%;
-      height: 100px;
-      object-fit: contain;
-    }
-    .plane-item.selected {
-      border: 2px solid gold;
-    }
-    .plane-item.owned::after {
-      content: "OWNED";
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: green;
-      color: #fff;
-      padding: 2px 5px;
-      border-radius: 3px;
-      font-size: 0.8rem;
-    }
+        /* Main Canvas */
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
 
-    /* =========================
-       MISSILE BUY MODAL
-       ========================= */
-    #buyMissilesModal .modal-content {
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #missileCountContainer {
-      margin: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.2rem;
-    }
-    #missileCountContainer button {
-      background: linear-gradient(45deg, #0066cc, #004080);
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
-      font-size: 1.5rem;
-      transition: transform 0.2s;
-    }
-    #missileCountContainer button:hover {
-      transform: scale(1.05);
-    }
-    #missileCount {
-      width: 40px;
-      text-align: center;
-      font-size: 1.2rem;
-    }
-    #totalCost {
-      font-size: 1.2rem;
-      margin: 1rem 0;
-    }
-    #closeBuyMissile, #confirmBuyMissile {
-      margin: 0.5rem;
-      padding: 0.8rem 2rem;
-      font-size: 1.1rem;
-      background: linear-gradient(45deg, #0066cc, #004080);
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    }
-    #closeBuyMissile:hover, #confirmBuyMissile:hover {
-      background: linear-gradient(45deg, #005bb5, #003d66);
-      transform: scale(1.04);
-    }
+        /* Screen Shake */
+        .shake {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0% { transform: translate(0,0); }
+            20% { transform: translate(-10px,5px); }
+            40% { transform: translate(10px,-5px); }
+            60% { transform: translate(-10px,5px); }
+            80% { transform: translate(10px,-5px); }
+            100% { transform: translate(0,0); }
+        }
 
-    /* =========================
-       ON-SCREEN ARROW CONTROLS (mobile)
-       ========================= */
-    .control-buttons {
-      position: absolute;
-      left: 50%;
-      bottom: 60px;
-      transform: translateX(-50%);
-      z-index: 50;
-      display: grid;
-      grid-template-areas:
-        ". up ."
-        "left . right"
-        ". down .";
-      grid-gap: 10px;
-    }
-    .control-btn {
-      width: 60px;
-      height: 60px;
-      font-size: 1.5rem;
-      background: rgba(255,255,255,0.3);
-      border: none;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .control-btn:active {
-      transform: scale(0.95);
-    }
-    #upButton { grid-area: up; }
-    #leftButton { grid-area: left; }
-    #rightButton { grid-area: right; }
-    #downButton { grid-area: down; }
+        /* Top Panels */
+        #topLeftPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 20;
+        }
+        #topLeftPanel div {
+            font-size: 1rem;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 8px;
+            border-radius: 4px;
+        }
 
-    /* Utility Classes */
-    .hidden {
-      display: none !important;
-    }
-    @media (max-width: 768px) {
-      .menu-overlay h1 { font-size: 2rem; }
-      .menu-overlay button { padding: 0.8rem 1.6rem; font-size: 1rem; min-width: 180px; }
-      .control-btn { width: 50px; height: 50px; font-size: 1.2rem; }
-      #pauseButton { font-size: 0.8rem; }
-      .powerup-label { font-size: 0.8rem; }
-    }
-  </style>
+        #topRightPanel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 20;
+        }
+        #pauseButton {
+            padding: 8px 12px;
+            background: linear-gradient(45deg, #0066cc, #004080);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s, transform 0.2s;
+        }
+        #pauseButton:hover {
+            background: linear-gradient(45deg, #005bb5, #003d66);
+            transform: scale(1.05);
+        }
+
+        .powerup-label {
+            font-size: 0.9rem;
+            text-align: right;
+            margin-bottom: 3px;
+        }
+        .powerup-bar {
+            position: relative;
+            width: 120px;
+            height: 20px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .powerup-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+        }
+        #shieldBar { background: #00aaff; width: 0%; }
+        #magnetBar { background: #ff6600; width: 0%; }
+
+        /* Menus & Modals */
+        .menu-overlay, .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+        }
+        .menu-overlay h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #fff;
+            text-shadow: 0 0 10px #00f;
+        }
+        .menu-overlay h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+        .menu-overlay button, .modal-content button {
+            margin: 0.5rem;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background: linear-gradient(45deg, #0066cc, #004080);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            min-width: 200px;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .menu-overlay button:hover, .modal-content button:hover {
+            background: linear-gradient(45deg, #005bb5, #003d66);
+            transform: scale(1.03);
+        }
+
+        .modal-content {
+            background: #333;
+            padding: 1.5rem;
+            border-radius: 10px;
+            max-width: 70%;
+            max-height: 90%;
+            overflow-y: auto;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* Buy Missiles Modal */
+        #buyMissilesModal .modal-content {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #missileCountContainer {
+            margin: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+        #missileCountContainer button {
+            background: none;
+            border: none;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            padding: 0;
+        }
+        #missileCountContainer img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        #missileCountContainer button:hover img {
+            transform: scale(1.05);
+        }
+        #missileCount { width: 40px; text-align: center; font-size: 1rem; }
+        #totalCost { font-size: 1rem; margin: 1rem 0; }
+
+        /* Store Items */
+        #storeModal .modal-content {
+            background: #333;
+            border: 2px solid #ffcc00;
+            max-width: 600px;
+        }
+        .store-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+        .plane-item {
+            padding: 1rem;
+            background: #444;
+            border-radius: 5px;
+            text-align: center;
+            position: relative;
+        }
+        .plane-item h3 {
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+        .plane-item p {
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            margin: 0.3rem 0;
+            font-size: 0.8rem;
+        }
+        .stat-label {
+            width: 70px;
+            text-align: left;
+        }
+        .stat-fill {
+            width: 100px;
+            height: 10px;
+            background: #666;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .stat-fill div {
+            height: 100%;
+            background: #00aaff;
+        }
+        .plane-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        .plane-item.selected { border: 2px solid gold; }
+        .plane-item.owned button {
+            background: green;
+            cursor: default;
+        }
+
+        /* Settings Modal */
+        #settingsModal .modal-content {
+            text-align: left;
+        }
+        .setting-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem 0;
+        }
+        .setting-option label {
+            font-size: 1.1rem;
+        }
+        input[type="range"] {
+            width: 150px;
+            accent-color: #0066cc;
+        }
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #0066cc;
+        }
+
+        /* Control Buttons */
+        .control-buttons {
+            position: absolute;
+            left: 50%;
+            bottom: 60px;
+            transform: translateX(-50%);
+            z-index: 50;
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px 60px;
+            gap: 10px;
+        }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .control-btn:active { transform: scale(0.95); }
+        #upButton { grid-area: up; }
+        #leftButton { grid-area: left; }
+        #rightButton { grid-area: right; }
+        #downButton { grid-area: down; }
+
+        /* Utility */
+        .hidden { display: none !important; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .menu-overlay h1 { font-size: 2.5rem; }
+            .menu-overlay h2 { font-size: 1.5rem; }
+            .menu-overlay button, .modal-content button {
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+                min-width: 160px;
+            }
+            #topLeftPanel div, .powerup-label { font-size: 0.9rem; }
+            #pauseButton { font-size: 0.8rem; padding: 6px 10px; }
+            .control-btn { width: 50px; height: 50px; font-size: 1.2rem; }
+            .modal-content { padding: 1rem; max-width: 85%; }
+            .store-items { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-  <div id="gameContainer">
-    <!-- Background Video -->
-    <video id="bgVideo" autoplay loop muted playsinline>
-      <source src="videos/bgvideo.mp4" type="video/mp4" />
-      Your browser does not support the video tag.
-    </video>
-    <!-- Main Canvas -->
-    <canvas id="gameCanvas"></canvas>
-    
-    <!-- Top Left Panel -->
-    <div id="topLeftPanel" class="hidden">
-      <div id="highScoreContainer">High Score: <span id="highScoreDisplay">0</span></div>
-      <div id="scoreContainer">Score: <span id="scoreDisplay">0</span></div>
-      <div id="coinsContainer">Coins: <span id="coinsDisplay">0</span></div>
-    </div>
-    
-    <!-- Top Right Panel -->
-    <div id="topRightPanel" class="hidden">
-      <button id="pauseButton">Pause</button>
-      <div id="shieldLabel" class="powerup-label hidden">Shield</div>
-      <div id="shieldIndicator" class="powerup-bar hidden">
-        <div id="shieldBar" class="powerup-fill"></div>
-      </div>
-      <div id="magnetLabel" class="powerup-label hidden">Magnet</div>
-      <div id="magnetIndicator" class="powerup-bar hidden">
-        <div id="magnetBar" class="powerup-fill"></div>
-      </div>
-    </div>
+    <div id="gameContainer">
+        <video id="bgVideo" autoplay loop muted playsinline>
+            <source src="videos/bgvideo.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+        </video>
+        <canvas id="gameCanvas"></canvas>
 
-    <!-- Main Menu -->
-    <div id="mainMenu" class="menu-overlay">
-      <h1>Aero Defender</h1>
-      <button id="startButton">Start Game</button>
-      <button id="buyMissileButton">Buy Missiles 🔥</button>
-      <button id="storeButton">Store</button>
-      <button id="settingsButton">Settings</button>
-    </div>
-    
-    <!-- Buy Missiles Modal -->
-    <div id="buyMissilesModal" class="modal-overlay hidden">
-      <div class="modal-content">
-        <h2>Buy Missiles 🔥</h2>
-        <div style="margin-bottom: 1rem; font-size: 1.1rem;">
-          You currently have <span id="availableMissilesInModal">0</span> missiles.
+        <!-- Top Left Panel -->
+        <div id="topLeftPanel" class="hidden">
+            <div>High Score: <span id="highScoreDisplay">0</span></div>
+            <div>Score: <span id="scoreDisplay">0</span></div>
+            <div>Coins: <span id="coinsDisplay">0</span></div>
+            <div>Missiles: <span id="missilesDisplay">0</span></div>
         </div>
-        <div id="missileCountContainer">
-          <button id="minusMissile">-</button>
-          <span id="missileCount">1</span>
-          <button id="plusMissile">+</button>
+
+        <!-- Top Right Panel -->
+        <div id="topRightPanel" class="hidden">
+            <button id="pauseButton">Pause</button>
+            <div id="shieldLabel" class="powerup-label hidden">Shield</div>
+            <div id="shieldIndicator" class="powerup-bar hidden">
+                <div id="shieldBar" class="powerup-fill"></div>
+            </div>
+            <div id="magnetLabel" class="powerup-label hidden">Magnet</div>
+            <div id="magnetIndicator" class="powerup-bar hidden">
+                <div id="magnetBar" class="powerup-fill"></div>
+            </div>
         </div>
-        <div id="totalCost">20 Coins</div>
-        <button id="closeBuyMissile">Close</button>
-        <button id="confirmBuyMissile">Buy</button>
-      </div>
-    </div>
-    
-    <!-- Pause Menu -->
-    <div id="pauseMenu" class="menu-overlay hidden">
-      <h2>Paused</h2>
-      <button id="resumeButton">Resume</button>
-      <button id="restartButton">Restart</button>
-      <button id="mainMenuButton">Main Menu</button>
-    </div>
-    
-    <!-- Game Over Menu -->
-    <div id="gameOverMenu" class="menu-overlay hidden">
-      <h2>Game Over</h2>
-      <div>Score: <span id="finalScore">0</span></div>
-      <div>Coins Collected: <span id="finalCoins">0</span></div>
-      <button id="restartButton2">Play Again</button>
-      <button id="mainMenuButton2">Main Menu</button>
-    </div>
-    
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal-overlay hidden">
-      <div class="modal-content">
-        <div class="settings-tabs">
-          <button id="volumeTab" class="active">Volume</button>
-          <button id="aboutTab">About</button>
+
+        <!-- Main Menu -->
+        <div id="mainMenu" class="menu-overlay">
+            <h1>Aero Defender</h1>
+            <button id="startButton">Start Game</button>
+            <button id="buyMissileButton">Buy Missiles 🔥</button>
+            <button id="storeButton">Store</button>
+            <button id="settingsButton">Settings</button>
         </div>
-        <div id="volumeContent" class="setting-item">
-          <label for="volumeSlider">Volume</label>
-          <input type="range" id="volumeSlider" min="0" max="100" value="50" />
+
+        <!-- Pause Menu -->
+        <div id="pauseMenu" class="menu-overlay hidden">
+            <h2>Paused</h2>
+            <button id="resumeButton">Resume</button>
+            <button id="restartButton">Restart</button>
+            <button id="mainMenuButton">Main Menu</button>
         </div>
-        <div id="aboutContent" class="setting-item hidden">
-          <p>
-            Game Description: Aero Defender (Development Phase)<br />
-            Title: Aero Defender<br />
-            Genre: Arcade, Action, Endless Runner<br />
-            Platform: Web Browser (HTML5, JavaScript)<br />
-            Status: In Development<br />
-            Devloped.by.om.sn
-          </p>
+
+        <!-- Game Over Menu -->
+        <div id="gameOverMenu" class="menu-overlay hidden">
+            <h2>Game Over</h2>
+            <div>Score: <span id="finalScore">0</span></div>
+            <div>Coins Collected: <span id="finalCoins">0</span></div>
+            <div>Missiles Left: <span id="finalMissilesLeft">0</span></div>
+            <button id="playAgainButton">Play Again</button>
+            <button id="mainMenuButton2">Main Menu</button>
         </div>
-        <button id="closeSettings">Close</button>
-      </div>
-    </div>
-    
-    <!-- Store Modal -->
-    <div id="storeModal" class="modal-overlay hidden">
-      <div class="modal-content">
-        <h2>Store</h2>
-        <div>Your Coins: <span id="storeCoins">0</span></div>
-        <div id="planesList" class="store-items">
-          <!-- Dynamically populated planes -->
+
+        <!-- Buy Missiles Modal -->
+        <div id="buyMissilesModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>Buy Missiles 🔥</h2>
+                <div style="margin-bottom: 1rem; font-size: 1rem;">
+                    You have <span id="currentCoinsDisplay">0</span> coins and <span id="availableMissilesInModal">0</span> missiles.
+                </div>
+                <div id="missileCountContainer">
+                    <button id="minusMissile"><img src="images/minus.png" alt="Minus"></button>
+                    <span id="missileCount">1</span>
+                    <button id="plusMissile"><img src="images/plus.png" alt="Plus"></button>
+                </div>
+                <div id="totalCost">10 Coins</div>
+                <button id="closeBuyMissile">Close</button>
+                <button id="confirmBuyMissile">Buy</button>
+            </div>
         </div>
-        <button id="closeStore">Close</button>
-      </div>
+
+        <!-- Store Modal -->
+        <div id="storeModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>Aircraft Store</h2>
+                <div>Your Coins: <span id="storeCoins">0</span></div>
+                <div id="planesList" class="store-items"></div>
+                <button id="closeStore">Close Store</button>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>SETTINGS</h2>
+                <div class="setting-option">
+                    <label for="musicVolumeSlider">Music Volume</label>
+                    <input type="range" id="musicVolumeSlider" min="0" max="100" value="50" />
+                </div>
+                <div class="setting-option">
+                    <label for="sfxVolumeSlider">Sound Effects Volume</label>
+                    <input type="range" id="sfxVolumeSlider" min="0" max="100" value="75" />
+                </div>
+                <div class="setting-option">
+                    <label for="vibrationToggle">Vibration</label>
+                    <input type="checkbox" id="vibrationToggle" />
+                </div>
+                <div class="setting-option">
+                    <label for="fpsToggle">Show FPS</label>
+                    <input type="checkbox" id="fpsToggle" />
+                </div>
+                <div class="setting-option">
+                    <label for="arrowControlsToggle">Show Arrow Controls</label>
+                    <input type="checkbox" id="arrowControlsToggle" checked />
+                </div>
+                <button id="saveSettings">SAVE SETTINGS</button>
+                <button id="closeSettings">Close</button>
+            </div>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div id="controls" class="control-buttons hidden">
+            <button id="upButton" class="control-btn">⬆️</button>
+            <button id="leftButton" class="control-btn">⬅️</button>
+            <button id="rightButton" class="control-btn">➡️</button>
+            <button id="downButton" class="control-btn">⬇️</button>
+        </div>
     </div>
-    
-    <!-- On-screen Arrows (only during gameplay) -->
-    <div id="controls" class="control-buttons hidden">
-      <button id="upButton" class="control-btn">⬆️</button>
-      <button id="leftButton" class="control-btn">⬅️</button>
-      <button id="rightButton" class="control-btn">➡️</button>
-      <button id="downButton" class="control-btn">⬇️</button>
-    </div>
-  </div>
-  
-  <script>
-    /* =========================
-       GAME CONFIGURATION
-       ========================= */
-    const GAME_CONFIG = {
-      missileSpawnRate: 1500,
-      coinSpawnRate: 2000,
-      newCoinSpawnRate: 5000,
-      shieldSpawnRate: 15000,
-      magnetSpawnRate: 30000,
-      magnetDuration: 10000,
-      coinValue: 10,
-      newCoinValue: 20,
-      planeSpeed: 5,
-      missileSpeed: 4,
-      coinSpeed: 3,
-      shieldDuration: 10000,
-      magnetAttractionRadius: 250,
-      magnetAttractionSpeed: 12,
-      planeImages: [
-        { id: 0, src: 'images/plane1.png', price: 0,   name: 'Basic Plane' },
-        { id: 1, src: 'images/plane2.png', price: 100, name: 'Advanced Plane' },
-        { id: 2, src: 'images/plane3.png', price: 250, name: 'Stealth Plane' },
-        { id: 3, src: 'images/plane4.png', price: 500, name: 'Space Plane' }
-      ],
-      missileCost: 20  // cost per missile (updated)
-    };
 
-    /* =========================
-       GLOBAL VARIABLES & SETUP
-       ========================= */
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    let gameState = 'menu'; // "menu", "playing", "paused", "gameover"
-    let score = 0, coinsCollected = 0;
-    let coins = parseInt(localStorage.getItem('coins')) || 0;
-    let highScore = parseInt(localStorage.getItem('highScore')) || 0;
-    let animationFrameId = null;
-    let lastFrameTime = 0, FPS = 60;
-    const frameInterval = 1000 / FPS;
-
-    // Owned planes and selection
-    let ownedPlanes = JSON.parse(localStorage.getItem('ownedPlanes')) || [0];
-    let selectedPlane = parseInt(localStorage.getItem('selectedPlane')) || 0;
-
-    // Player Missiles
-    let playerMissiles = parseInt(localStorage.getItem('playerMissiles')) || 0;
-
-    // Fire logic
-    let firedProjectiles = [];
-
-    function getDifficultyFactor() {
-      return 1 + score / 2000;
-    }
-
-    // Asset Loading
-    const assets = {
-      planes: [],
-      missile: new Image(),
-      coin: new Image(),
-      newCoin: new Image(),
-      shield: new Image(),
-      magnet: new Image()
-    };
-    let assetsLoaded = 0;
-    let totalAssets = GAME_CONFIG.planeImages.length + 5;
-
-    for (let i = 0; i < GAME_CONFIG.planeImages.length; i++) {
-      assets.planes[i] = new Image();
-    }
-
-    function loadAsset(img, src) {
-      img.onload = () => {
-        assetsLoaded++;
-        if (assetsLoaded === totalAssets) init();
-      };
-      img.onerror = () => {
-        console.error("Failed to load asset: " + src);
-        assetsLoaded++;
-        if (assetsLoaded === totalAssets) init();
-      };
-      img.src = src;
-    }
-
-    GAME_CONFIG.planeImages.forEach((plane, i) => {
-      loadAsset(assets.planes[i], plane.src);
-    });
-    loadAsset(assets.missile, 'images/missile.png');
-    loadAsset(assets.coin, 'images/coin.png');
-    loadAsset(assets.newCoin, 'images/newcoin.png');
-    loadAsset(assets.shield, 'images/shield.png');
-    loadAsset(assets.magnet, 'images/magnet.png');
-
-    // Fallback if assets load slowly
-    setTimeout(() => {
-      if (gameState === 'menu' && assetsLoaded < totalAssets) {
-        console.warn("Fallback init: Not all assets loaded in time.");
-        init();
-      }
-    }, 5000);
-
-    // Sounds (include distroy.mp3 for missile collisions)
-    const sounds = {
-      move: new Audio('sounds/move.mp3'),
-      booster: new Audio('sounds/booster.mp3'),
-      explosion: new Audio('sounds/explosion.mp3'),
-      click: new Audio('sounds/click.mp3'),
-      coin: new Audio('sounds/coinsound.mp3'),
-      shield: new Audio('sounds/shieldcollected.mp3'),
-      collision: new Audio('sounds/collision.mp3'),
-      out: new Audio('sounds/out.mp3'),
-      background: new Audio('sounds/background.mp3'),
-      buy: new Audio('sounds/buy.mp3'),
-      distroy: new Audio('sounds/distroy.mp3')  // new destroy effect
-    };
-
-    function updateVolume() {
-      const vol = parseFloat(document.getElementById('volumeSlider').value) / 100;
-      for (let key in sounds) {
-        sounds[key].volume = vol;
-      }
-    }
-
-    function playSound(sound) {
-      try {
-        if (sounds[sound]) {
-          sounds[sound].currentTime = 0;
-          sounds[sound].play().catch(e => console.log("Error playing " + sound, e));
-        }
-      } catch (error) {
-        console.log("Error playing sound: " + sound, error);
-      }
-    }
-
-    function playBackgroundMusic() {
-      try {
-        sounds.background.loop = true;
-        updateVolume();
-        sounds.background.play().catch(e => console.log("Background music error", e));
-      } catch (error) {
-        console.log("Background music error", error);
-      }
-    }
-
-    function pauseBackgroundMusic() {
-      try { sounds.background.pause(); } catch (error) { console.log(error); }
-    }
-
-    function stopBackgroundMusic() {
-      try { sounds.background.pause(); sounds.background.currentTime = 0; } catch (error) { console.log(error); }
-    }
-
-    function playOutSound() {
-      if (!isShieldActive) {
-        playSound('out');
-      }
-    }
-
-    /* =========================
-       PARTICLE EFFECTS
-       ========================= */
-    let particles = [];
-    let explosionParticles = [];
-
-    // Coin sparkle
-    function createParticles(x, y) {
-      for (let i = 0; i < 10; i++) {
-        particles.push({
-          x: x,
-          y: y,
-          radius: Math.random() * 3 + 2,
-          vx: (Math.random() - 0.5) * 4,
-          vy: (Math.random() - 0.5) * 4,
-          alpha: 1.0
-        });
-      }
-    }
-    // Explosion effect for missile collisions
-    function createExplosion(x, y) {
-      for (let i = 0; i < 15; i++) {
-        explosionParticles.push({
-          x: x,
-          y: y,
-          radius: Math.random() * 4 + 3,
-          vx: (Math.random() - 0.5) * 6,
-          vy: (Math.random() - 0.5) * 6,
-          alpha: 1.0
-        });
-      }
-    }
-
-    function updateParticles() {
-      // Coin sparkles
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= 0.02;
-        if (p.alpha <= 0) {
-          particles.splice(i, 1);
-        }
-      }
-      // Explosion sparkles
-      for (let i = explosionParticles.length - 1; i >= 0; i--) {
-        const e = explosionParticles[i];
-        e.x += e.vx;
-        e.y += e.vy;
-        e.alpha -= 0.03;
-        if (e.alpha <= 0) {
-          explosionParticles.splice(i, 1);
-        }
-      }
-    }
-
-    function drawParticles() {
-      // Coin sparkles
-      particles.forEach(p => {
-        ctx.save();
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = 'yellow';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-      // Explosion sparkles
-      explosionParticles.forEach(e => {
-        ctx.save();
-        ctx.globalAlpha = e.alpha;
-        ctx.fillStyle = 'orange';
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-    }
-
-    /* =========================
-       GAME OBJECTS & FUNCTIONS
-       ========================= */
-    const plane = {
-      x: canvas.width / 2,
-      y: canvas.height * 0.7,
-      width: 60,
-      height: 60,
-      speed: GAME_CONFIG.planeSpeed,
-      getBounds() {
-        return {
-          left: this.x - this.width / 2,
-          right: this.x + this.width / 2,
-          top: this.y - this.height / 2,
-          bottom: this.y + this.height / 2
+    <script>
+        // Game Configuration
+        const GAME_CONFIG = {
+            missileSpawnRate: 1500,
+            coinSpawnRate: 2000,
+            newCoinSpawnRate: 5000,
+            shieldSpawnRate: 15000,
+            magnetSpawnRate: 30000,
+            magnetDuration: 10000,
+            coinValue: 10,
+            newCoinValue: 20,
+            shieldDuration: 10000,
+            magnetAttractionRadius: 250,
+            magnetAttractionSpeed: 12,
+            missileCost: 10,
+            planeImages: [
+                { id: 0, src: 'images/plane1.png', price: 0, name: 'Standard Fighter', desc: 'Balanced performance', stats: { speed: 50, handling: 40, fireRate: 30 } },
+                { id: 1, src: 'images/plane2.png', price: 100, name: 'Interceptor', desc: 'High speed', stats: { speed: 80, handling: 60, fireRate: 40 } },
+                { id: 2, src: 'images/plane3.png', price: 200, name: 'Heavy Bomber', desc: 'Powerful and durable', stats: { speed: 20, handling: 40, fireRate: 60 } },
+                { id: 3, src: 'images/plane4.png', price: 300, name: 'Stealth Jet', desc: 'Ultimate performance', stats: { speed: 90, handling: 70, fireRate: 50 } }
+            ]
         };
-      },
-      draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.drawImage(assets.planes[selectedPlane], -this.width / 2, -this.height / 2, this.width, this.height);
-        if (isShieldActive) {
-          ctx.beginPath();
-          ctx.arc(0, 0, this.width / 1.5, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(0,200,255,0.8)';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-          ctx.fillStyle = 'rgba(0,200,255,0.2)';
-          ctx.fill();
+
+        // Global Variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-        ctx.restore();
-      }
-    };
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-    /* =========================
-       FIRED PROJECTILES LOGIC
-       ========================= */
-    function fireProjectile() {
-      if (playerMissiles > 0) {
-        playerMissiles--;
-        localStorage.setItem('playerMissiles', playerMissiles);
-        updateMissileCountInModal();
-        // Create projectile
-        firedProjectiles.push({
-          x: plane.x,
-          y: plane.y - plane.height/2,
-          width: 15,
-          height: 30,
-          speed: 8,
-          getBounds() {
-            return {
-              left: this.x - this.width/2,
-              right: this.x + this.width/2,
-              top: this.y - this.height/2,
-              bottom: this.y + this.height/2
-            };
-          }
-        });
-      }
-    }
+        let gameState = 'menu';
+        let score = 0, coinsCollected = 0;
+        let coins = parseInt(localStorage.getItem('coins')) || 0;
+        let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+        let playerMissiles = parseInt(localStorage.getItem('playerMissiles')) || 0;
+        let animationFrameId = null;
+        let lastFrameTime = 0;
+        let ownedPlanes = JSON.parse(localStorage.getItem('ownedPlanes')) || [0];
+        let selectedPlane = parseInt(localStorage.getItem('selectedPlane')) || 0;
 
-    function updateFiredProjectiles() {
-      for (let i = firedProjectiles.length - 1; i >= 0; i--) {
-        let proj = firedProjectiles[i];
-        proj.y -= proj.speed;
-        if (proj.y < -proj.height) {
-          firedProjectiles.splice(i, 1);
-          continue;
-        }
-        // Check collisions with incoming missiles
-        for (let j = missiles.length - 1; j >= 0; j--) {
-          let m = missiles[j];
-          if (checkCollision(proj, m)) {
-            // Both are destroyed
-            firedProjectiles.splice(i, 1);
-            missiles.splice(j, 1);
-            createExplosion(proj.x, proj.y);
-            // Play new "distroy" sound
-            playSound('distroy');
-            break;
-          }
-        }
-      }
-    }
+        // Settings
+        let showArrowControls = localStorage.getItem('showArrowControls') === 'false' ? false : true;
+        let vibrationEnabled = localStorage.getItem('vibration') === 'true' || false;
 
-    function drawFiredProjectiles() {
-      ctx.save();
-      ctx.fillStyle = 'red';
-      firedProjectiles.forEach(proj => {
-        ctx.fillRect(proj.x - proj.width/2, proj.y - proj.height/2, proj.width, proj.height);
-      });
-      ctx.restore();
-    }
+        // Game Objects
+        const plane = {
+            x: canvas.width / 2,
+            y: canvas.height * 0.7,
+            width: 60,
+            height: 60,
+            speed: 0, // Set in startGame
+            getBounds() {
+                return {
+                    left: this.x - this.width / 2,
+                    right: this.x + this.width / 2,
+                    top: this.y - this.height / 2,
+                    bottom: this.y + this.height / 2
+                };
+            }
+        };
 
-    // Arrays for enemy missiles, coins, powerups
-    let missiles = [], coinsArray = [], powerups = [];
-    let isShieldActive = false, isMagnetActive = false;
-    let shieldEndTime = 0, magnetEndTime = 0;
-    let lastMissileTime = 0, lastCoinTime = 0, lastNewCoinTime = 0;
-    let lastShieldTime = 0, lastMagnetTime = 0;
-    let keysPressed = {};
-    let isTouching = false, touchX = 0, touchY = 0, lastTouchX = 0, lastTouchY = 0;
+        let missiles = [], coinsArray = [], powerups = [], firedProjectiles = [];
+        let particles = [], explosionParticles = [], accelerationParticles = [];
+        let isShieldActive = false, isMagnetActive = false;
+        let shieldEndTime = 0, magnetEndTime = 0;
+        let isDraggingPlane = false, dragOffsetX = 0, dragOffsetY = 0;
+        let lastMissileTime = 0, lastCoinTime = 0, lastNewCoinTime = 0, lastShieldTime = 0, lastMagnetTime = 0;
+        let touchX, touchY;
 
-    function resetPlanePosition() {
-      plane.x = canvas.width / 2;
-      plane.y = canvas.height * 0.7;
-    }
+        // Asset Loading
+        const assets = {
+            planes: [],
+            missile: new Image(),
+            coin: new Image(),
+            newCoin: new Image(),
+            shield: new Image(),
+            magnet: new Image(),
+            fire: new Image()
+        };
+        let assetsLoaded = 0;
+        const totalAssets = GAME_CONFIG.planeImages.length + 5;
 
-    // Spawn enemy missile
-    function spawnMissile() {
-      const missileWidth = 30, missileHeight = 60;
-      missiles.push({
-        x: Math.random() * canvas.width,
-        y: -missileHeight,
-        width: missileWidth,
-        height: missileHeight,
-        speed: GAME_CONFIG.missileSpeed * getDifficultyFactor(),
-        getBounds() {
-          return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
-          };
-        },
-        draw() {
-          ctx.drawImage(assets.missile, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-        }
-      });
-    }
-
-    function spawnCoin(isNewCoin = false) {
-      const coinSize = 30;
-      const coinValue = isNewCoin ? GAME_CONFIG.newCoinValue : GAME_CONFIG.coinValue;
-      const coinImage = isNewCoin ? assets.newCoin : assets.coin;
-      coinsArray.push({
-        x: Math.random() * canvas.width,
-        y: -coinSize,
-        width: coinSize,
-        height: coinSize,
-        speed: GAME_CONFIG.coinSpeed,
-        value: coinValue,
-        isNewCoin: isNewCoin,
-        isAttracted: false,
-        image: coinImage,
-        getBounds() {
-          return {
-            left: this.x - this.width/2,
-            right: this.x + this.width/2,
-            top: this.y - this.height/2,
-            bottom: this.y + this.height/2
-          };
-        },
-        draw() {
-          ctx.drawImage(this.image, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
-        }
-      });
-    }
-
-    function spawnPowerup(type) {
-      const powerupSize = (type === 'magnet') ? 50 : 40;
-      const powerupImage = type === 'shield' ? assets.shield : assets.magnet;
-      powerups.push({
-        x: Math.random() * canvas.width,
-        y: -powerupSize,
-        width: powerupSize,
-        height: powerupSize,
-        speed: GAME_CONFIG.coinSpeed,
-        type: type,
-        image: powerupImage,
-        getBounds() {
-          return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
-          };
-        },
-        draw() {
-          ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-        }
-      });
-    }
-
-    function activateShield() {
-      isShieldActive = true;
-      shieldEndTime = Date.now() + GAME_CONFIG.shieldDuration;
-      playSound('shield');
-      document.getElementById('shieldLabel').classList.remove('hidden');
-      document.getElementById('shieldIndicator').classList.remove('hidden');
-    }
-
-    function activateMagnet() {
-      isMagnetActive = true;
-      magnetEndTime = Date.now() + GAME_CONFIG.magnetDuration;
-      playSound('booster');
-      document.getElementById('magnetLabel').classList.remove('hidden');
-      document.getElementById('magnetIndicator').classList.remove('hidden');
-    }
-
-    function updatePowerupStates() {
-      const now = Date.now();
-      if (isShieldActive) {
-        const timeLeft = shieldEndTime - now;
-        if (timeLeft <= 0) {
-          isShieldActive = false;
-          document.getElementById('shieldLabel').classList.add('hidden');
-          document.getElementById('shieldIndicator').classList.add('hidden');
-        } else {
-          const fraction = timeLeft / GAME_CONFIG.shieldDuration;
-          document.getElementById('shieldBar').style.width = (fraction * 100) + '%';
-        }
-      }
-      if (isMagnetActive) {
-        const timeLeft = magnetEndTime - now;
-        if (timeLeft <= 0) {
-          isMagnetActive = false;
-          document.getElementById('magnetLabel').classList.add('hidden');
-          document.getElementById('magnetIndicator').classList.add('hidden');
-        } else {
-          const fraction = timeLeft / GAME_CONFIG.magnetDuration;
-          document.getElementById('magnetBar').style.width = (fraction * 100) + '%';
-        }
-      }
-    }
-
-    function checkCollision(obj1, obj2) {
-      const b1 = obj1.getBounds(), b2 = obj2.getBounds();
-      return !(b1.right < b2.left || b1.left > b2.right || b1.bottom < b2.top || b1.top > b2.bottom);
-    }
-
-    function gameLoop(timestamp) {
-      const deltaTime = timestamp - lastFrameTime;
-      if (deltaTime >= frameInterval) {
-        lastFrameTime = timestamp - (deltaTime % frameInterval);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (gameState === 'playing') {
-          updateGame();
-          drawGame();
-          updateParticles();
-          drawParticles();
-          updateFiredProjectiles();
-          drawFiredProjectiles();
-          document.getElementById('controls').classList.remove('hidden');
-        } else {
-          document.getElementById('controls').classList.add('hidden');
-        }
-      }
-      animationFrameId = requestAnimationFrame(gameLoop);
-    }
-
-    function updateGame() {
-      score += 0.1;
-      updateUI();
-      updatePowerupStates();
-      handlePlayerMovement();
-
-      const currentTime = Date.now();
-      if (currentTime - lastMissileTime > GAME_CONFIG.missileSpawnRate / getDifficultyFactor()) {
-        spawnMissile();
-        lastMissileTime = currentTime;
-      }
-      if (currentTime - lastCoinTime > GAME_CONFIG.coinSpawnRate) {
-        spawnCoin(false);
-        lastCoinTime = currentTime;
-      }
-      if (currentTime - lastNewCoinTime > GAME_CONFIG.newCoinSpawnRate) {
-        spawnCoin(true);
-        lastNewCoinTime = currentTime;
-      }
-      if (currentTime - lastShieldTime > GAME_CONFIG.shieldSpawnRate) {
-        spawnPowerup('shield');
-        lastShieldTime = currentTime;
-      }
-      if (currentTime - lastMagnetTime > GAME_CONFIG.magnetSpawnRate) {
-        spawnPowerup('magnet');
-        lastMagnetTime = currentTime;
-      }
-
-      // Update enemy missiles, coins, powerups
-      updateMissiles();
-      updateCoins();
-      updatePowerups();
-    }
-
-    function updateMissiles() {
-      for (let i = missiles.length - 1; i >= 0; i--) {
-        let m = missiles[i];
-        m.y += m.speed;
-        if (m.y > canvas.height + m.height) {
-          missiles.splice(i, 1);
-          continue;
-        }
-        // Collision with player's plane
-        if (checkCollision(plane, m)) {
-          if (isShieldActive) {
-            missiles.splice(i, 1);
-            playSound('explosion');
-          } else {
-            document.getElementById('gameContainer').classList.add('shake');
-            setTimeout(() => {
-              document.getElementById('gameContainer').classList.remove('shake');
-            }, 500);
-            gameOver();
-            return;
-          }
-        }
-      }
-    }
-
-    function updateCoins() {
-      for (let i = coinsArray.length - 1; i >= 0; i--) {
-        let coin = coinsArray[i];
-        if (isMagnetActive) {
-          let dx = plane.x - coin.x, dy = plane.y - coin.y;
-          let distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < GAME_CONFIG.magnetAttractionRadius) coin.isAttracted = true;
-          if (coin.isAttracted) {
-            let angle = Math.atan2(dy, dx);
-            coin.x += Math.cos(angle) * GAME_CONFIG.magnetAttractionSpeed;
-            coin.y += Math.sin(angle) * GAME_CONFIG.magnetAttractionSpeed;
-          } else {
-            coin.y += coin.speed;
-          }
-        } else {
-          coin.y += coin.speed;
-        }
-        if (coin.y > canvas.height + coin.height) {
-          coinsArray.splice(i, 1);
-          continue;
-        }
-        if (checkCollision(plane, coin)) {
-          coins += coin.value;
-          coinsCollected += coin.value;
-          coinsArray.splice(i, 1);
-          playSound('coin');
-          createParticles(coin.x, coin.y);
-          updateUI();
-          continue;
-        }
-      }
-    }
-
-    function updatePowerups() {
-      for (let i = powerups.length - 1; i >= 0; i--) {
-        let p = powerups[i];
-        p.y += p.speed;
-        if (p.y > canvas.height + p.height) {
-          powerups.splice(i, 1);
-          continue;
-        }
-        if (checkCollision(plane, p)) {
-          if (p.type === 'shield') activateShield();
-          else if (p.type === 'magnet') activateMagnet();
-          powerups.splice(i, 1);
-          continue;
-        }
-      }
-    }
-
-    function handlePlayerMovement() {
-      const speed = plane.speed;
-      if (keysPressed['ArrowLeft'] || keysPressed['a']) plane.x -= speed;
-      if (keysPressed['ArrowRight'] || keysPressed['d']) plane.x += speed;
-      if (keysPressed['ArrowUp'] || keysPressed['w']) plane.y -= speed;
-      if (keysPressed['ArrowDown'] || keysPressed['s']) plane.y += speed;
-      plane.x = Math.max(plane.width / 2, Math.min(canvas.width - plane.width / 2, plane.x));
-      plane.y = Math.max(plane.height / 2, Math.min(canvas.height - plane.height / 2, plane.y));
-    }
-
-    function drawGame() {
-      plane.draw();
-      missiles.forEach(m => m.draw());
-      coinsArray.forEach(c => c.draw());
-      powerups.forEach(p => p.draw());
-    }
-
-    function gameOver() {
-      gameState = 'gameover';
-      stopBackgroundMusic();
-      playOutSound();
-      if (Math.floor(score) > highScore) {
-        highScore = Math.floor(score);
-        localStorage.setItem('highScore', highScore);
-      }
-      coins += coinsCollected;
-      localStorage.setItem('coins', coins);
-      document.getElementById('topLeftPanel').classList.add('hidden');
-      document.getElementById('topRightPanel').classList.add('hidden');
-      document.getElementById('finalScore').textContent = Math.floor(score);
-      document.getElementById('finalCoins').textContent = coinsCollected;
-      document.getElementById('gameOverMenu').classList.remove('hidden');
-    }
-
-    function restartGame() {
-      gameState = 'playing';
-      score = 0;
-      coinsCollected = 0;
-      missiles = [];
-      coinsArray = [];
-      powerups = [];
-      particles = [];
-      explosionParticles = [];
-      firedProjectiles = [];
-      lastMissileTime = Date.now();
-      lastCoinTime = Date.now();
-      lastNewCoinTime = Date.now();
-      lastShieldTime = Date.now();
-      lastMagnetTime = Date.now();
-      isShieldActive = false;
-      isMagnetActive = false;
-      resetPlanePosition();
-      document.getElementById('gameOverMenu').classList.add('hidden');
-      document.getElementById('mainMenu').classList.add('hidden');
-      document.getElementById('topLeftPanel').classList.remove('hidden');
-      document.getElementById('topRightPanel').classList.remove('hidden');
-      updateMissileCountInModal();
-      playBackgroundMusic();
-    }
-
-    function pauseGame() {
-      if (gameState === 'playing') {
-        gameState = 'paused';
-        pauseBackgroundMusic();
-        document.getElementById('pauseMenu').classList.remove('hidden');
-      }
-    }
-
-    function resumeGame() {
-      if (gameState === 'paused') {
-        gameState = 'playing';
-        playBackgroundMusic();
-        document.getElementById('pauseMenu').classList.add('hidden');
-      }
-    }
-
-    function returnToMainMenu() {
-      gameState = 'menu';
-      stopBackgroundMusic();
-      document.getElementById('pauseMenu').classList.add('hidden');
-      document.getElementById('gameOverMenu').classList.add('hidden');
-      document.getElementById('topLeftPanel').classList.add('hidden');
-      document.getElementById('topRightPanel').classList.add('hidden');
-      document.getElementById('mainMenu').classList.remove('hidden');
-      updateMissileCountInModal();
-    }
-
-    /* =========================
-       UI & STORE FUNCTIONS
-       ========================= */
-    function updateUI() {
-      document.getElementById('highScoreDisplay').textContent = highScore;
-      document.getElementById('scoreDisplay').textContent = Math.floor(score);
-      document.getElementById('coinsDisplay').textContent = coins;
-      document.getElementById('storeCoins').textContent = coins;
-    }
-
-    function populateStore() {
-      const planesList = document.getElementById('planesList');
-      planesList.innerHTML = '';
-      GAME_CONFIG.planeImages.forEach(planeInfo => {
-        const planeItem = document.createElement('div');
-        planeItem.className = 'plane-item';
-        if (ownedPlanes.includes(planeInfo.id)) planeItem.classList.add('owned');
-        if (selectedPlane === planeInfo.id) planeItem.classList.add('selected');
-        const planeImage = document.createElement('img');
-        planeImage.src = planeInfo.src;
-        planeImage.alt = planeInfo.name;
-        const planeName = document.createElement('h3');
-        planeName.textContent = planeInfo.name;
-        const planePrice = document.createElement('div');
-        if (ownedPlanes.includes(planeInfo.id)) {
-          const selectButton = document.createElement('button');
-          selectButton.textContent = selectedPlane === planeInfo.id ? 'Selected' : 'Select';
-          selectButton.disabled = selectedPlane === planeInfo.id;
-          selectButton.addEventListener('click', () => {
-            selectPlane(planeInfo.id);
-            populateStore();
-            playSound('click');
-            document.getElementById('storeModal').classList.add('hidden');
-            returnToMainMenu();
-          });
-          planePrice.appendChild(selectButton);
-        } else {
-          planePrice.textContent = `${planeInfo.price} coins`;
-          if (coins >= planeInfo.price) {
-            const buyButton = document.createElement('button');
-            buyButton.textContent = 'Buy';
-            buyButton.addEventListener('click', () => {
-              buyPlane(planeInfo.id, planeInfo.price);
-              populateStore();
-              playSound('buy');
-              document.getElementById('storeModal').classList.add('hidden');
-              returnToMainMenu();
+        function loadAsset(img, src) {
+            return new Promise((resolve) => {
+                img.onload = () => {
+                    assetsLoaded++;
+                    if (assetsLoaded === totalAssets) init();
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load asset: ${src}`);
+                    assetsLoaded++;
+                    if (assetsLoaded === totalAssets) init();
+                    resolve();
+                };
+                img.src = src;
             });
-            planePrice.appendChild(buyButton);
-          }
         }
-        planeItem.appendChild(planeImage);
-        planeItem.appendChild(planeName);
-        planeItem.appendChild(planePrice);
-        planesList.appendChild(planeItem);
-      });
-    }
 
-    function buyPlane(planeId, price) {
-      if (coins >= price && !ownedPlanes.includes(planeId)) {
-        coins -= price;
-        ownedPlanes.push(planeId);
-        selectPlane(planeId);
-        localStorage.setItem('coins', coins);
-        localStorage.setItem('ownedPlanes', JSON.stringify(ownedPlanes));
-        updateUI();
-      }
-    }
+        GAME_CONFIG.planeImages.forEach((plane, i) => {
+            assets.planes[i] = new Image();
+            loadAsset(assets.planes[i], plane.src);
+        });
+        loadAsset(assets.missile, 'images/missile.png');
+        loadAsset(assets.coin, 'images/coin.png');
+        loadAsset(assets.newCoin, 'images/newcoin.png');
+        loadAsset(assets.shield, 'images/shield.png');
+        loadAsset(assets.magnet, 'images/magnet.png');
+        loadAsset(assets.fire, 'images/fire.png');
 
-    function selectPlane(planeId) {
-      if (ownedPlanes.includes(planeId)) {
-        selectedPlane = planeId;
-        localStorage.setItem('selectedPlane', selectedPlane);
-      }
-    }
+        // Sound Management
+        const sounds = {
+            click: new Audio('sounds/click.mp3'),
+            coin: new Audio('sounds/coinsound.mp3'),
+            shield: new Audio('sounds/shieldcollected.mp3'),
+            booster: new Audio('sounds/booster.mp3'),
+            explosion: new Audio('sounds/explosion.mp3'),
+            collision: new Audio('sounds/collision.mp3'),
+            out: new Audio('sounds/out.mp3'),
+            buy: new Audio('sounds/buy.mp3'),
+            destroy: new Audio('sounds/destroy.mp3'),
+            background: new Audio('sounds/background.mp3')
+        };
 
-    /* =========================
-       MISSILE BUY LOGIC
-       ========================= */
-    let missileBuyCount = 1;
-    function updateMissileBuyUI() {
-      document.getElementById('missileCount').textContent = missileBuyCount;
-      document.getElementById('totalCost').textContent = (missileBuyCount * GAME_CONFIG.missileCost) + ' Coins';
-    }
-    function updateMissileCountInModal() {
-      document.getElementById('availableMissilesInModal').textContent = playerMissiles;
-    }
-
-    function buyMissiles() {
-      const totalPrice = missileBuyCount * GAME_CONFIG.missileCost;
-      if (coins >= totalPrice) {
-        coins -= totalPrice;
-        playerMissiles += missileBuyCount;
-        localStorage.setItem('coins', coins);
-        localStorage.setItem('playerMissiles', playerMissiles);
-        updateUI();
-        updateMissileCountInModal();
-        playSound('buy');
-      }
-    }
-
-    /* =========================
-       INPUT HANDLING
-       ========================= */
-    function setupKeyboardControls() {
-      window.addEventListener('keydown', e => {
-        keysPressed[e.key] = true;
-        if (e.key === 'Escape' && gameState === 'playing') pauseGame();
-        // Space or Enter to fire
-        if ((e.key === ' ' || e.key === 'Enter') && gameState === 'playing') {
-          fireProjectile();
+        function playSound(sound) {
+            if (sounds[sound]) {
+                sounds[sound].currentTime = 0;
+                sounds[sound].volume = document.getElementById('sfxVolumeSlider').value / 100;
+                sounds[sound].play().catch(() => {});
+            }
+            if (vibrationEnabled && navigator.vibrate && (sound === 'out' || sound === 'destroy')) {
+                navigator.vibrate(sound === 'out' ? 200 : 100);
+            }
         }
-      });
-      window.addEventListener('keyup', e => {
-        keysPressed[e.key] = false;
-      });
-    }
 
-    function setupTouchControls() {
-      // Tap plane to fire
-      canvas.addEventListener('mousedown', e => {
-        if (gameState === 'playing') {
-          // Check if click is inside plane bounding box
-          const rect = canvas.getBoundingClientRect();
-          const mouseX = e.clientX - rect.left;
-          const mouseY = e.clientY - rect.top;
-          const { left, right, top, bottom } = plane.getBounds();
-          if (mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom) {
-            fireProjectile();
-          }
+        function playBackgroundMusic() {
+            sounds.background.loop = true;
+            sounds.background.volume = document.getElementById('musicVolumeSlider').value / 100;
+            sounds.background.play().catch(() => {});
         }
-      });
-      // Basic movement touch
-      canvas.addEventListener('touchstart', e => {
-        e.preventDefault();
-        isTouching = true;
-        touchX = e.touches[0].clientX;
-        touchY = e.touches[0].clientY;
-        lastTouchX = touchX;
-        lastTouchY = touchY;
-      }, { passive: false });
-      canvas.addEventListener('touchmove', e => {
-        e.preventDefault();
-        touchX = e.touches[0].clientX;
-        touchY = e.touches[0].clientY;
-      }, { passive: false });
-      canvas.addEventListener('touchend', () => { isTouching = false; });
-      // On-screen arrow controls
-      document.getElementById('upButton').addEventListener('touchstart', e => {
-        e.preventDefault();
-        keysPressed['ArrowUp'] = true;
-      }, { passive: false });
-      document.getElementById('leftButton').addEventListener('touchstart', e => {
-        e.preventDefault();
-        keysPressed['ArrowLeft'] = true;
-      }, { passive: false });
-      document.getElementById('rightButton').addEventListener('touchstart', e => {
-        e.preventDefault();
-        keysPressed['ArrowRight'] = true;
-      }, { passive: false });
-      document.getElementById('downButton').addEventListener('touchstart', e => {
-        e.preventDefault();
-        keysPressed['ArrowDown'] = true;
-      }, { passive: false });
-      document.getElementById('upButton').addEventListener('touchend', () => { keysPressed['ArrowUp'] = false; });
-      document.getElementById('leftButton').addEventListener('touchend', () => { keysPressed['ArrowLeft'] = false; });
-      document.getElementById('rightButton').addEventListener('touchend', () => { keysPressed['ArrowRight'] = false; });
-      document.getElementById('downButton').addEventListener('touchend', () => { keysPressed['ArrowDown'] = false; });
-    }
 
-    function setupMenuListeners() {
-      document.getElementById('startButton').addEventListener('click', () => {
-        restartGame();
-        playSound('click');
-      });
-      // Buy Missiles 🔥 button
-      document.getElementById('buyMissileButton').addEventListener('click', () => {
-        missileBuyCount = 1;
-        updateMissileBuyUI();
-        updateMissileCountInModal();
-        document.getElementById('buyMissilesModal').classList.remove('hidden');
-        playSound('click');
-      });
-      // Missiles modal
-      document.getElementById('minusMissile').addEventListener('click', () => {
-        if (missileBuyCount > 1) {
-          missileBuyCount--;
-          updateMissileBuyUI();
+        function pauseBackgroundMusic() {
+            sounds.background.pause();
         }
-      });
-      document.getElementById('plusMissile').addEventListener('click', () => {
-        missileBuyCount++;
-        updateMissileBuyUI();
-      });
-      document.getElementById('closeBuyMissile').addEventListener('click', () => {
-        document.getElementById('buyMissilesModal').classList.add('hidden');
-        playSound('click');
-      });
-      document.getElementById('confirmBuyMissile').addEventListener('click', () => {
-        buyMissiles();
-        document.getElementById('buyMissilesModal').classList.add('hidden');
-        returnToMainMenu();
-      });
 
-      document.getElementById('settingsButton').addEventListener('click', () => {
-        document.getElementById('settingsModal').classList.remove('hidden');
-        playSound('click');
-      });
-      document.getElementById('storeButton').addEventListener('click', () => {
-        document.getElementById('storeModal').classList.remove('hidden');
-        populateStore();
-        playSound('click');
-      });
-      document.getElementById('closeSettings').addEventListener('click', () => {
-        document.getElementById('settingsModal').classList.add('hidden');
-        playSound('click');
-      });
-      document.getElementById('closeStore').addEventListener('click', () => {
-        document.getElementById('storeModal').classList.add('hidden');
-        playSound('click');
-      });
-      document.getElementById('resumeButton').addEventListener('click', () => {
-        resumeGame();
-        playSound('click');
-      });
-      document.getElementById('restartButton').addEventListener('click', () => {
-        restartGame();
-        playSound('click');
-      });
-      document.getElementById('mainMenuButton').addEventListener('click', () => {
-        returnToMainMenu();
-        playSound('click');
-      });
-      document.getElementById('restartButton2').addEventListener('click', () => {
-        restartGame();
-        playSound('click');
-      });
-      document.getElementById('mainMenuButton2').addEventListener('click', () => {
-        returnToMainMenu();
-        playSound('click');
-      });
-      document.getElementById('volumeSlider').addEventListener('input', updateVolume);
-      document.getElementById('volumeTab').addEventListener('click', () => {
-        document.getElementById('volumeTab').classList.add('active');
-        document.getElementById('aboutTab').classList.remove('active');
-        document.getElementById('volumeContent').classList.remove('hidden');
-        document.getElementById('aboutContent').classList.add('hidden');
-      });
-      document.getElementById('aboutTab').addEventListener('click', () => {
-        document.getElementById('aboutTab').classList.add('active');
-        document.getElementById('volumeTab').classList.remove('active');
-        document.getElementById('aboutContent').classList.remove('hidden');
-        document.getElementById('volumeContent').classList.add('hidden');
-      });
-      document.getElementById('pauseButton').addEventListener('click', () => {
-        pauseGame();
-        playSound('click');
-      });
-    }
+        function stopBackgroundMusic() {
+            sounds.background.pause();
+            sounds.background.currentTime = 0;
+        }
 
-    function init() {
-      setupKeyboardControls();
-      setupTouchControls();
-      setupMenuListeners();
-      updateUI();
-      updateVolume();
-      updateMissileBuyUI();
-      updateMissileCountInModal();
-      lastFrameTime = performance.now();
-      animationFrameId = requestAnimationFrame(gameLoop);
-    }
-  </script>
+        // Particle Effects
+        function createParticles(x, y, type = 'coin') {
+            const count = type === 'coin' ? 10 : 15;
+            const color = type === 'coin' ? 'yellow' : 'orange';
+            for (let i = 0; i < count; i++) {
+                (type === 'coin' ? particles : explosionParticles).push({
+                    x, y,
+                    radius: Math.random() * 3 + 2,
+                    vx: (Math.random() - 0.5) * (type === 'coin' ? 4 : 6),
+                    vy: (Math.random() - 0.5) * (type === 'coin' ? 4 : 6),
+                    alpha: 1.0,
+                    color
+                });
+            }
+        }
+
+        function createAccelerationParticles() {
+            if (keysPressed['ArrowUp']) {
+                accelerationParticles.push({
+                    x: plane.x,
+                    y: plane.y + plane.height / 2,
+                    radius: 3,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2 + 2,
+                    alpha: 1.0,
+                    color: 'red'
+                });
+            }
+        }
+
+        function updateParticles() {
+            [particles, explosionParticles, accelerationParticles].forEach(arr => {
+                for (let i = arr.length - 1; i >= 0; i--) {
+                    const p = arr[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= 0.02;
+                    if (p.alpha <= 0) arr.splice(i, 1);
+                }
+            });
+        }
+
+        function drawParticles() {
+            [particles, explosionParticles, accelerationParticles].forEach(arr => {
+                arr.forEach(p => {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+            });
+        }
+
+        // Game Logic
+        function fireProjectile() {
+            if (playerMissiles > 0) {
+                playerMissiles--;
+                updateUI();
+                localStorage.setItem('playerMissiles', playerMissiles);
+                firedProjectiles.push({
+                    x: plane.x,
+                    y: plane.y - plane.height / 2,
+                    width: 10,
+                    height: 20,
+                    speed: 8,
+                    getBounds() {
+                        return {
+                            left: this.x - this.width / 2,
+                            right: this.x + this.width / 2,
+                            top: this.y - this.height / 2,
+                            bottom: this.y + this.height / 2
+                        };
+                    }
+                });
+            }
+        }
+
+        function spawnMissile() {
+            missiles.push({
+                x: Math.random() * canvas.width,
+                y: -60,
+                width: 30,
+                height: 60,
+                speed: 4 * (1 + score / 2000),
+                getBounds() {
+                    return {
+                        left: this.x - this.width / 2,
+                        right: this.x + this.width / 2,
+                        top: this.y - this.height / 2,
+                        bottom: this.y + this.height / 2
+                    };
+                }
+            });
+        }
+
+        function spawnCoin(isNewCoin = false) {
+            const size = 30;
+            coinsArray.push({
+                x: Math.random() * canvas.width,
+                y: -size,
+                width: size,
+                height: size,
+                speed: 3,
+                value: isNewCoin ? GAME_CONFIG.newCoinValue : GAME_CONFIG.coinValue,
+                isNewCoin,
+                getBounds() {
+                    return {
+                        left: this.x - this.width / 2,
+                        right: this.x + this.width / 2,
+                        top: this.y - this.height / 2,
+                        bottom: this.y + this.height / 2
+                    };
+                }
+            });
+        }
+
+        function spawnPowerup(type) {
+            const size = type === 'magnet' ? 50 : 40;
+            powerups.push({
+                x: Math.random() * canvas.width,
+                y: -size,
+                width: size,
+                height: size,
+                speed: 3,
+                type,
+                getBounds() {
+                    return {
+                        left: this.x - this.width / 2,
+                        right: this.x + this.width / 2,
+                        top: this.y - this.height / 2,
+                        bottom: this.y + this.height / 2
+                    };
+                }
+            });
+        }
+
+        function checkCollision(obj1, obj2) {
+            const b1 = obj1.getBounds(), b2 = obj2.getBounds();
+            return !(b1.right < b2.left || b1.left > b2.right || b1.bottom < b2.top || b1.top > b2.bottom);
+        }
+
+        // Game Loop
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastFrameTime;
+            if (deltaTime >= 1000 / 60) {
+                lastFrameTime = timestamp - (deltaTime % (1000 / 60));
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (gameState === 'playing') {
+                    updateGame();
+                    drawGame();
+                }
+            }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function updateGame() {
+            score += 0.1;
+            updateUI();
+
+            const now = Date.now();
+            if (now - lastMissileTime > GAME_CONFIG.missileSpawnRate / (1 + score / 2000)) {
+                spawnMissile();
+                lastMissileTime = now;
+            }
+            if (now - lastCoinTime > GAME_CONFIG.coinSpawnRate) {
+                spawnCoin(false);
+                lastCoinTime = now;
+            }
+            if (now - lastNewCoinTime > GAME_CONFIG.newCoinSpawnRate) {
+                spawnCoin(true);
+                lastNewCoinTime = now;
+            }
+            if (now - lastShieldTime > GAME_CONFIG.shieldSpawnRate) {
+                spawnPowerup('shield');
+                lastShieldTime = now;
+            }
+            if (now - lastMagnetTime > GAME_CONFIG.magnetSpawnRate) {
+                spawnPowerup('magnet');
+                lastMagnetTime = now;
+            }
+
+            if (isDraggingPlane) {
+                plane.x = Math.max(plane.width / 2, Math.min(canvas.width - plane.width / 2, touchX - dragOffsetX));
+                plane.y = Math.max(plane.height / 2, Math.min(canvas.height - plane.height / 2, touchY - dragOffsetY));
+            }
+
+            if (keysPressed['ArrowUp']) {
+                plane.y -= plane.speed;
+                createAccelerationParticles();
+            }
+            if (keysPressed['ArrowDown']) plane.y += plane.speed;
+            if (keysPressed['ArrowLeft']) plane.x -= plane.speed;
+            if (keysPressed['ArrowRight']) plane.x += plane.speed;
+            plane.x = Math.max(plane.width / 2, Math.min(canvas.width - plane.width / 2, plane.x));
+            plane.y = Math.max(plane.height / 2, Math.min(canvas.height - plane.height / 2, plane.y));
+
+            updateMissiles();
+            updateCoins();
+            updatePowerups();
+            updateFiredProjectiles();
+            updateParticles();
+
+            if (isShieldActive && now > shieldEndTime) {
+                isShieldActive = false;
+                document.getElementById('shieldIndicator').classList.add('hidden');
+                document.getElementById('shieldLabel').classList.add('hidden');
+            }
+            if (isMagnetActive && now > magnetEndTime) {
+                isMagnetActive = false;
+                document.getElementById('magnetIndicator').classList.add('hidden');
+                document.getElementById('magnetLabel').classList.add('hidden');
+            }
+            if (isShieldActive) document.getElementById('shieldBar').style.width = `${((shieldEndTime - now) / GAME_CONFIG.shieldDuration) * 100}%`;
+            if (isMagnetActive) document.getElementById('magnetBar').style.width = `${((magnetEndTime - now) / GAME_CONFIG.magnetDuration) * 100}%`;
+        }
+
+        function drawGame() {
+            plane.draw = () => {
+                ctx.save();
+                ctx.translate(plane.x, plane.y);
+                ctx.drawImage(assets.planes[selectedPlane], -plane.width/2, -plane.height/2, plane.width, plane.height);
+                if (isShieldActive) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, plane.width/1.5, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(0,200,255,0.8)';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.fillStyle = 'rgba(0,200,255,0.2)';
+                    ctx.fill();
+                }
+                ctx.restore();
+            };
+            plane.draw();
+
+            missiles.forEach(m => {
+                m.draw = () => ctx.drawImage(assets.missile, m.x - m.width/2, m.y - m.height/2, m.width, m.height);
+                m.draw();
+            });
+            coinsArray.forEach(c => {
+                c.draw = () => ctx.drawImage(c.isNewCoin ? assets.newCoin : assets.coin, c.x - c.width/2, c.y - c.height/2, c.width, c.height);
+                c.draw();
+            });
+            powerups.forEach(p => {
+                p.draw = () => ctx.drawImage(p.type === 'shield' ? assets.shield : assets.magnet, p.x - p.width/2, p.y - p.height/2, p.width, p.height);
+                p.draw();
+            });
+            firedProjectiles.forEach(p => {
+                p.draw = () => ctx.drawImage(assets.fire, p.x - p.width/2, p.y - p.height/2, p.width, p.height);
+                p.draw();
+            });
+            drawParticles();
+        }
+
+        function updateMissiles() {
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                missiles[i].y += missiles[i].speed;
+                if (missiles[i].y > canvas.height + missiles[i].height) {
+                    missiles.splice(i, 1);
+                    continue;
+                }
+                if (checkCollision(plane, missiles[i])) {
+                    if (isShieldActive) {
+                        missiles.splice(i, 1);
+                        playSound('explosion');
+                    } else {
+                        gameOver();
+                        document.getElementById('gameContainer').classList.add('shake');
+                        setTimeout(() => document.getElementById('gameContainer').classList.remove('shake'), 500);
+                    }
+                }
+            }
+        }
+
+        function updateCoins() {
+            for (let i = coinsArray.length - 1; i >= 0; i--) {
+                let coin = coinsArray[i];
+                if (isMagnetActive) {
+                    let dx = plane.x - coin.x, dy = plane.y - coin.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < GAME_CONFIG.magnetAttractionRadius) {
+                        let angle = Math.atan2(dy, dx);
+                        coin.x += Math.cos(angle) * GAME_CONFIG.magnetAttractionSpeed;
+                        coin.y += Math.sin(angle) * GAME_CONFIG.magnetAttractionSpeed;
+                    } else {
+                        coin.y += coin.speed;
+                    }
+                } else {
+                    coin.y += coin.speed;
+                }
+                if (coin.y > canvas.height + coin.height) {
+                    coinsArray.splice(i, 1);
+                    continue;
+                }
+                if (checkCollision(plane, coin)) {
+                    coins += coin.value;
+                    coinsCollected += coin.value;
+                    coinsArray.splice(i, 1);
+                    playSound('coin');
+                    createParticles(coin.x, coin.y, 'coin');
+                    updateUI();
+                }
+            }
+        }
+
+        function updatePowerups() {
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                powerups[i].y += powerups[i].speed;
+                if (powerups[i].y > canvas.height + powerups[i].height) {
+                    powerups.splice(i, 1);
+                    continue;
+                }
+                if (checkCollision(plane, powerups[i])) {
+                    if (powerups[i].type === 'shield') {
+                        isShieldActive = true;
+                        shieldEndTime = Date.now() + GAME_CONFIG.shieldDuration;
+                        playSound('shield');
+                        document.getElementById('shieldIndicator').classList.remove('hidden');
+                        document.getElementById('shieldLabel').classList.remove('hidden');
+                    } else if (powerups[i].type === 'magnet') {
+                        isMagnetActive = true;
+                        magnetEndTime = Date.now() + GAME_CONFIG.magnetDuration;
+                        playSound('booster');
+                        document.getElementById('magnetIndicator').classList.remove('hidden');
+                        document.getElementById('magnetLabel').classList.remove('hidden');
+                    }
+                    powerups.splice(i, 1);
+                }
+            }
+        }
+
+        function updateFiredProjectiles() {
+            for (let i = firedProjectiles.length - 1; i >= 0; i--) {
+                let p = firedProjectiles[i];
+                p.y -= p.speed;
+                if (p.y < -p.height) {
+                    firedProjectiles.splice(i, 1);
+                    continue;
+                }
+                for (let j = missiles.length - 1; j >= 0; j--) {
+                    if (checkCollision(p, missiles[j])) {
+                        createParticles(missiles[j].x, missiles[j].y, 'explosion');
+                        playSound('destroy');
+                        firedProjectiles.splice(i, 1);
+                        missiles.splice(j, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // UI Updates
+        function updateUI() {
+            document.getElementById('highScoreDisplay').textContent = highScore;
+            document.getElementById('scoreDisplay').textContent = Math.floor(score);
+            document.getElementById('coinsDisplay').textContent = coins;
+            document.getElementById('missilesDisplay').textContent = playerMissiles;
+            document.getElementById('storeCoins').textContent = coins;
+            document.getElementById('currentCoinsDisplay').textContent = coins;
+            document.getElementById('availableMissilesInModal').textContent = playerMissiles;
+        }
+
+        let missileBuyCount = 1;
+        function updateMissileBuyUI() {
+            missileBuyCount = Math.max(1, missileBuyCount);
+            document.getElementById('missileCount').textContent = missileBuyCount;
+            document.getElementById('totalCost').textContent = `${missileBuyCount * GAME_CONFIG.missileCost} Coins`;
+        }
+
+        function buyMissiles() {
+            const totalCost = missileBuyCount * GAME_CONFIG.missileCost;
+            if (coins >= totalCost) {
+                coins -= totalCost;
+                playerMissiles += missileBuyCount;
+                localStorage.setItem('coins', coins);
+                localStorage.setItem('playerMissiles', playerMissiles);
+                playSound('buy');
+                updateUI();
+                document.getElementById('buyMissilesModal').classList.add('hidden');
+            } else {
+                alert('Not enough coins!');
+            }
+        }
+
+        // Game State Management
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            coinsCollected = 0;
+            missiles = [];
+            coinsArray = [];
+            powerups = [];
+            firedProjectiles = [];
+            particles = [];
+            explosionParticles = [];
+            accelerationParticles = [];
+            isShieldActive = false;
+            isMagnetActive = false;
+            shieldEndTime = 0;
+            magnetEndTime = 0;
+            lastMissileTime = Date.now();
+            lastCoinTime = Date.now();
+            lastNewCoinTime = Date.now();
+            lastShieldTime = Date.now();
+            lastMagnetTime = Date.now();
+            document.getElementById('shieldIndicator').classList.add('hidden');
+            document.getElementById('shieldLabel').classList.add('hidden');
+            document.getElementById('magnetIndicator').classList.add('hidden');
+            document.getElementById('magnetLabel').classList.add('hidden');
+            plane.x = canvas.width / 2;
+            plane.y = canvas.height * 0.7;
+            plane.speed = GAME_CONFIG.planeImages[selectedPlane].stats.speed / 10;
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('pauseMenu').classList.add('hidden');
+            document.getElementById('gameOverMenu').classList.add('hidden');
+            document.getElementById('topLeftPanel').classList.remove('hidden');
+            document.getElementById('topRightPanel').classList.remove('hidden');
+            if (showArrowControls) {
+                document.getElementById('controls').classList.remove('hidden');
+            }
+            stopBackgroundMusic();
+            playBackgroundMusic();
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            stopBackgroundMusic();
+            playSound('out');
+            if (Math.floor(score) > highScore) {
+                highScore = Math.floor(score);
+                localStorage.setItem('highScore', highScore);
+            }
+            coins += coinsCollected;
+            localStorage.setItem('coins', coins);
+            document.getElementById('topLeftPanel').classList.add('hidden');
+            document.getElementById('topRightPanel').classList.add('hidden');
+            document.getElementById('controls').classList.add('hidden');
+            document.getElementById('finalScore').textContent = Math.floor(score);
+            document.getElementById('finalCoins').textContent = coinsCollected;
+            document.getElementById('finalMissilesLeft').textContent = playerMissiles;
+            document.getElementById('gameOverMenu').classList.remove('hidden');
+        }
+
+        function pauseGame() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                pauseBackgroundMusic();
+                document.getElementById('pauseMenu').classList.remove('hidden');
+                document.getElementById('controls').classList.add('hidden');
+            }
+        }
+
+        function resumeGame() {
+            if (gameState === 'paused') {
+                gameState = 'playing';
+                document.getElementById('pauseMenu').classList.add('hidden');
+                if (showArrowControls) {
+                    document.getElementById('controls').classList.remove('hidden');
+                }
+                playBackgroundMusic();
+            }
+        }
+
+        // Store Management
+        function populateStore() {
+            const planesList = document.getElementById('planesList');
+            planesList.innerHTML = '';
+            GAME_CONFIG.planeImages.forEach(planeInfo => {
+                const div = document.createElement('div');
+                div.className = `plane-item ${ownedPlanes.includes(planeInfo.id) ? 'owned' : ''} ${selectedPlane === planeInfo.id ? 'selected' : ''}`;
+                div.innerHTML = `
+                    <img src="${planeInfo.src}" alt="${planeInfo.name}" style="max-width: 100%; height: 100px; object-fit: contain;">
+                    <h3>${planeInfo.name}</h3>
+                    <p>${planeInfo.desc}</p>
+                    <div class="stat-bar"><span class="stat-label">Speed</span><div class="stat-fill"><div style="width: ${planeInfo.stats.speed}%"></div></div></div>
+                    <div class="stat-bar"><span class="stat-label">Handling</span><div class="stat-fill"><div style="width: ${planeInfo.stats.handling}%"></div></div></div>
+                    <div class="stat-bar"><span class="stat-label">Fire Rate</span><div class="stat-fill"><div style="width: ${planeInfo.stats.fireRate}%"></div></div></div>
+                    ${ownedPlanes.includes(planeInfo.id) ? 
+                        `<button ${selectedPlane === planeInfo.id ? 'disabled' : ''}>${selectedPlane === planeInfo.id ? 'Selected' : 'Select'}</button>` :
+                        `<div>${planeInfo.price} Coins</div><button ${coins >= planeInfo.price ? '' : 'disabled'}>Buy</button>`
+                    }
+                `;
+                if (ownedPlanes.includes(planeInfo.id)) {
+                    div.querySelector('button').addEventListener('click', () => {
+                        selectedPlane = planeInfo.id;
+                        plane.speed = GAME_CONFIG.planeImages[selectedPlane].stats.speed / 10;
+                        localStorage.setItem('selectedPlane', selectedPlane);
+                        playSound('click');
+                        populateStore();
+                    });
+                } else if (coins >= planeInfo.price) {
+                    div.querySelector('button').addEventListener('click', () => {
+                        coins -= planeInfo.price;
+                        ownedPlanes.push(planeInfo.id);
+                        selectedPlane = planeInfo.id;
+                        plane.speed = GAME_CONFIG.planeImages[selectedPlane].stats.speed / 10;
+                        localStorage.setItem('coins', coins);
+                        localStorage.setItem('ownedPlanes', JSON.stringify(ownedPlanes));
+                        localStorage.setItem('selectedPlane', selectedPlane);
+                        playSound('buy');
+                        updateUI();
+                        populateStore();
+                    });
+                }
+                planesList.appendChild(div);
+            });
+        }
+
+        // Input Handling
+        let keysPressed = {};
+        function setupControls() {
+            window.addEventListener('keydown', e => {
+                keysPressed[e.key] = true;
+                if (e.key === 'Escape' && gameState === 'playing') pauseGame();
+                if (e.key === ' ' && gameState === 'playing') fireProjectile();
+            });
+            window.addEventListener('keyup', e => keysPressed[e.key] = false);
+
+            canvas.addEventListener('mousedown', e => {
+                if (gameState === 'playing') {
+                    const rect = canvas.getBoundingClientRect();
+                    touchX = e.clientX - rect.left;
+                    touchY = e.clientY - rect.top;
+                    if (checkCollision({getBounds: () => ({left: touchX, right: touchX, top: touchY, bottom: touchY})}, plane)) {
+                        fireProjectile();
+                        isDraggingPlane = true;
+                        dragOffsetX = touchX - plane.x;
+                        dragOffsetY = touchY - plane.y;
+                    }
+                }
+            });
+            canvas.addEventListener('mousemove', e => {
+                if (isDraggingPlane) {
+                    const rect = canvas.getBoundingClientRect();
+                    touchX = e.clientX - rect.left;
+                    touchY = e.clientY - rect.top;
+                }
+            });
+            window.addEventListener('mouseup', () => isDraggingPlane = false);
+
+            canvas.addEventListener('touchstart', e => {
+                if (gameState === 'playing' && e.touches.length === 1) {
+                    e.preventDefault();
+                    const rect = canvas.getBoundingClientRect();
+                    touchX = e.touches[0].clientX - rect.left;
+                    touchY = e.touches[0].clientY - rect.top;
+                    if (checkCollision({getBounds: () => ({left: touchX, right: touchX, top: touchY, bottom: touchY})}, plane)) {
+                        fireProjectile();
+                        isDraggingPlane = true;
+                        dragOffsetX = touchX - plane.x;
+                        dragOffsetY = touchY - plane.y;
+                    }
+                }
+            }, { passive: false });
+            canvas.addEventListener('touchmove', e => {
+                if (isDraggingPlane && e.touches.length === 1) {
+                    e.preventDefault();
+                    const rect = canvas.getBoundingClientRect();
+                    touchX = e.touches[0].clientX - rect.left;
+                    touchY = e.touches[0].clientY - rect.top;
+                }
+            }, { passive: false });
+            canvas.addEventListener('touchend', () => isDraggingPlane = false);
+
+            ['up', 'left', 'right', 'down'].forEach(dir => {
+                const btn = document.getElementById(`${dir}Button`);
+                btn.addEventListener('touchstart', e => {
+                    e.preventDefault();
+                    keysPressed[`Arrow${dir.charAt(0).toUpperCase() + dir.slice(1)}`] = true;
+                }, { passive: false });
+                btn.addEventListener('touchend', () => keysPressed[`Arrow${dir.charAt(0).toUpperCase() + dir.slice(1)}`] = false);
+            });
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            document.getElementById('startButton').addEventListener('click', () => {
+                playSound('click');
+                startGame();
+            });
+            document.getElementById('buyMissileButton').addEventListener('click', () => {
+                playSound('click');
+                missileBuyCount = 1;
+                updateMissileBuyUI();
+                document.getElementById('buyMissilesModal').classList.remove('hidden');
+            });
+            document.getElementById('minusMissile').addEventListener('click', () => {
+                if (missileBuyCount > 1) missileBuyCount--;
+                updateMissileBuyUI();
+            });
+            document.getElementById('plusMissile').addEventListener('click', () => {
+                missileBuyCount++;
+                updateMissileBuyUI();
+            });
+            document.getElementById('confirmBuyMissile').addEventListener('click', () => {
+                playSound('click');
+                buyMissiles();
+            });
+            document.getElementById('closeBuyMissile').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('buyMissilesModal').classList.add('hidden');
+            });
+            document.getElementById('storeButton').addEventListener('click', () => {
+                playSound('click');
+                populateStore();
+                document.getElementById('storeModal').classList.remove('hidden');
+            });
+            document.getElementById('closeStore').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('storeModal').classList.add('hidden');
+            });
+            document.getElementById('settingsButton').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('settingsModal').classList.remove('hidden');
+            });
+            document.getElementById('closeSettings').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('settingsModal').classList.add('hidden');
+            });
+            document.getElementById('saveSettings').addEventListener('click', () => {
+                playSound('click');
+                localStorage.setItem('musicVolume', document.getElementById('musicVolumeSlider').value);
+                localStorage.setItem('sfxVolume', document.getElementById('sfxVolumeSlider').value);
+                localStorage.setItem('vibration', document.getElementById('vibrationToggle').checked);
+                localStorage.setItem('showArrowControls', document.getElementById('arrowControlsToggle').checked);
+                showArrowControls = document.getElementById('arrowControlsToggle').checked;
+                if (gameState === 'playing' && showArrowControls) {
+                    document.getElementById('controls').classList.remove('hidden');
+                } else if (gameState === 'playing') {
+                    document.getElementById('controls').classList.add('hidden');
+                }
+                document.getElementById('settingsModal').classList.add('hidden');
+                sounds.background.volume = document.getElementById('musicVolumeSlider').value / 100;
+            });
+            document.getElementById('pauseButton').addEventListener('click', () => {
+                playSound('click');
+                pauseGame();
+            });
+            document.getElementById('resumeButton').addEventListener('click', () => {
+                playSound('click');
+                resumeGame();
+            });
+            document.getElementById('restartButton').addEventListener('click', () => {
+                playSound('click');
+                startGame();
+            });
+            document.getElementById('mainMenuButton').addEventListener('click', () => {
+                playSound('click');
+                gameState = 'menu';
+                stopBackgroundMusic();
+                document.getElementById('pauseMenu').classList.add('hidden');
+                document.getElementById('mainMenu').classList.remove('hidden');
+            });
+            document.getElementById('playAgainButton').addEventListener('click', () => {
+                playSound('click');
+                startGame();
+            });
+            document.getElementById('mainMenuButton2').addEventListener('click', () => {
+                playSound('click');
+                gameState = 'menu';
+                stopBackgroundMusic();
+                document.getElementById('gameOverMenu').classList.add('hidden');
+                document.getElementById('mainMenu').classList.remove('hidden');
+            });
+        }
+
+        // Initialization
+        function init() {
+            updateUI();
+            setupControls();
+            setupEventListeners();
+            lastFrameTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        if (assetsLoaded === totalAssets) init();
+    </script>
 </body>
 </html>
